@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+
+{% block title %}Feedback & Suggestions - PG Hostel Mess{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap">
+    <div>
+      <span class="badge bg-purple text-white px-3 py-2 text-uppercase" style="background-color: #6f42c1;">Student Voice</span>
+      <h1 class="fw-bold text-primary mt-2">Hostel & Mess Feedback Portal</h1>
+      <p class="text-muted">We value your input to continuously improve living, dining, and housekeeping standards.</p>
+    </div>
+  </div>
+
+  <div class="row g-4 mb-5">
+    <!-- Submit Feedback Card (For Students) -->
+    <div class="col-lg-5">
+      <div class="card card-custom p-4 border-0 shadow h-100">
+        <h4 class="fw-bold text-primary mb-3"><i class="fa-solid fa-comment-dots me-2"></i> Submit Feedback</h4>
+        <p class="text-muted small mb-4">Share your feedback regarding mess food quality, hostel cleanliness, or warden support.</p>
+
+        {% if current_user.is_authenticated %}
+          <form method="POST" action="{{ url_for('public.feedback') }}">
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Category <span class="text-danger">*</span></label>
+              <select name="category" class="form-select" required>
+                <option value="Mess & Food Quality">Mess & Food Quality</option>
+                <option value="Room & Floor Cleanliness">Room & Floor Cleanliness</option>
+                <option value="Water & Electricity">Water & Electricity</option>
+                <option value="Warden & Staff Support">Warden & Staff Support</option>
+                <option value="Security & Safety">Security & Safety</option>
+                <option value="General Suggestion">General Suggestion</option>
+              </select>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Rating (1 to 5 Stars) <span class="text-danger">*</span></label>
+              <select name="rating" class="form-select" required>
+                <option value="5" selected>⭐⭐⭐⭐⭐ (5/5 - Excellent)</option>
+                <option value="4">⭐⭐⭐⭐ (4/5 - Good)</option>
+                <option value="3">⭐⭐⭐ (3/5 - Average)</option>
+                <option value="2">⭐⭐ (2/5 - Needs Improvement)</option>
+                <option value="1">⭐ (1/5 - Poor)</option>
+              </select>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Your Comments / Suggestions <span class="text-danger">*</span></label>
+              <textarea name="comment" class="form-control" rows="4" placeholder="Type your detailed feedback here..." required></textarea>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100 fw-bold py-2 shadow"><i class="fa-solid fa-paper-plane me-2"></i> Submit Feedback</button>
+          </form>
+        {% else %}
+          <div class="alert alert-warning">
+            <i class="fa-solid fa-lock me-2"></i> Please <a href="{{ url_for('auth.login') }}" class="fw-bold">login as Student</a> to submit feedback.
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Display Feedback Section -->
+    <div class="col-lg-7">
+      <div class="card card-custom p-4 border-0 shadow h-100">
+        {% if current_user.is_authenticated and (current_user.is_warden() or current_user.is_admin()) %}
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4 class="fw-bold text-primary mb-0"><i class="fa-solid fa-list-check me-2"></i> All Student Feedbacks ({{ all_feedback|length }})</h4>
+            {% if current_user.is_admin() %}
+              <span class="badge bg-danger">ADMIN FULL MANAGEMENT</span>
+            {% else %}
+              <span class="badge bg-info text-dark">WARDEN VIEW</span>
+            {% endif %}
+          </div>
+          {% if all_feedback %}
+            <div class="list-group list-group-flush max-vh-75 overflow-auto">
+              {% for fb in all_feedback %}
+                <div class="list-group-item p-3 mb-2 rounded border-0 bg-light shadow-sm">
+                  <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                      <span class="badge bg-primary me-2">{{ fb.category }}</span>
+                      <strong class="text-dark">{{ fb.student_name }}</strong> <span class="text-muted small">({{ fb.role_number }})</span>
+                    </div>
+                    <div>
+                      <span class="text-warning fw-bold">
+                        {% for i in range(fb.rating) %}⭐{% endfor %}
+                      </span>
+                    </div>
+                  </div>
+                  <p class="mt-2 mb-1 text-secondary small">{{ fb.comment }}</p>
+                  <div class="d-flex justify-content-between align-items-center mt-2">
+                    <span class="text-muted small" style="font-size: 0.75rem;"><i class="fa-solid fa-clock me-1"></i> {{ fb.created_at.strftime('%b %d, %Y %I:%M %p') if fb.created_at else '' }}</span>
+                    {% if current_user.is_admin() %}
+                      <form method="POST" action="{{ url_for('public.delete_feedback', feedback_id=fb._id) }}" onsubmit="return confirm('Delete this feedback entry?');">
+                        <button type="submit" class="btn btn-sm btn-outline-danger py-0 px-2 fs-7"><i class="fa-solid fa-trash me-1"></i> Delete</button>
+                      </form>
+                    {% endif %}
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="text-center py-5 text-muted">
+              <i class="fa-solid fa-comment-slash fs-1 mb-2"></i>
+              <p>No student feedback submitted yet.</p>
+            </div>
+          {% endif %}
+        {% else %}
+          <!-- Student View of Own Submitted Feedback -->
+          <h4 class="fw-bold text-primary mb-3"><i class="fa-solid fa-clock-history me-2"></i> My Submitted Feedback</h4>
+          {% if my_feedback %}
+            <div class="list-group list-group-flush">
+              {% for fb in my_feedback %}
+                <div class="list-group-item p-3 mb-2 rounded border-0 bg-light shadow-sm">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <span class="badge bg-secondary">{{ fb.category }}</span>
+                    <span class="text-warning fw-bold">{% for i in range(fb.rating) %}⭐{% endfor %}</span>
+                  </div>
+                  <p class="mt-2 mb-1 text-dark small">{{ fb.comment }}</p>
+                  <div class="text-muted small" style="font-size: 0.75rem;"><i class="fa-solid fa-clock me-1"></i> {{ fb.created_at.strftime('%b %d, %Y %I:%M %p') if fb.created_at else '' }}</div>
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="text-center py-5 text-muted">
+              <i class="fa-solid fa-comments fs-1 mb-2"></i>
+              <p>You have not submitted any feedback yet.</p>
+            </div>
+          {% endif %}
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

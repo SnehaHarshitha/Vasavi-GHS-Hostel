@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block title %}My Profile - Student Portal{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      <div class="card card-custom p-4 p-md-5 border-0 shadow-sm">
+        <h3 class="fw-bold text-primary mb-4"><i class="fa-solid fa-id-card me-2"></i> Student Profile & Details</h3>
+
+        <form method="POST" action="{{ url_for('student.profile') }}">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label text-muted small mb-1">Full Name (Locked)</label>
+              <input type="text" class="form-control bg-light" value="{{ user.full_name }}" readonly>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label text-muted small mb-1">Role Number (Locked)</label>
+              <input type="text" class="form-control bg-light fw-bold text-uppercase" value="{{ user.role_number }}" readonly>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label text-muted small mb-1">Email Address (Locked)</label>
+              <input type="email" class="form-control bg-light" value="{{ user.email }}" readonly>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label text-muted small mb-1">Assigned Room Number</label>
+              <input type="text" class="form-control bg-light" value="{{ user.room_number or 'Unassigned' }}" readonly>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label text-muted small mb-1">Department</label>
+              <input type="text" class="form-control bg-light" value="{{ user.department }}" readonly>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label text-muted small mb-1">Year of Study</label>
+              <input type="text" class="form-control bg-light" value="{{ user.year }}" readonly>
+            </div>
+
+            <hr class="my-4">
+            <h5 class="fw-bold text-dark">Editable Contact Details</h5>
+
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Student Phone Number</label>
+              <input type="tel" name="phone" class="form-control" value="{{ user.phone }}" required>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Parent / Guardian Name</label>
+              <input type="text" name="parent_name" class="form-control" value="{{ user.parent_name }}" required>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Parent Contact Phone</label>
+              <input type="tel" name="parent_phone" class="form-control" value="{{ user.parent_phone }}" required>
+            </div>
+
+            <div class="col-12 mt-4">
+              <button type="submit" class="btn btn-primary fw-bold px-4 shadow"><i class="fa-solid fa-save me-2"></i> Update Contact Details</button>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <!-- Change Password Card for Students -->
+      <div class="card card-custom p-4 p-md-5 border-0 shadow-sm mt-4">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+          <h4 class="fw-bold text-success mb-0"><i class="fa-solid fa-key me-2"></i> Change Password</h4>
+          <span class="badge bg-light text-dark border px-3 py-2"><i class="fa-solid fa-shield-halved me-1 text-success"></i> Security Center</span>
+        </div>
+        <p class="text-muted small mb-4">Default password for all students is <code class="fw-bold text-dark">Vasavi@1234</code>. You can change your password below at any time.</p>
+
+        <form method="POST" action="{{ url_for('student.change_password') }}">
+          <div class="row g-3">
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Current Password <span class="text-danger">*</span></label>
+              <input type="password" name="current_password" class="form-control" placeholder="e.g. Vasavi@1234" required>
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">New Password <span class="text-danger">*</span></label>
+              <input type="password" name="new_password" class="form-control" placeholder="Enter new password" required>
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Confirm New Password <span class="text-danger">*</span></label>
+              <input type="password" name="confirm_password" class="form-control" placeholder="Confirm new password" required>
+            </div>
+
+            <div class="col-12 mt-3">
+              <button type="submit" class="btn btn-success fw-bold px-4 shadow">
+                <i class="fa-solid fa-lock me-2"></i> Update Password
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

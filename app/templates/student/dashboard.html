@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+
+{% block title %}Student Dashboard - PG Hostel Mess{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <!-- Welcome Banner -->
+  <div class="card card-custom p-4 bg-primary text-white border-0 shadow mb-4">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+      <div>
+        <span class="badge bg-warning text-dark px-3 py-1 rounded-pill fw-bold text-uppercase mb-2">Student Portal</span>
+        <h2 class="fw-bold mb-1">Welcome, {{ current_user.full_name }}!</h2>
+        <p class="mb-0 opacity-90">
+          Roll Number: <strong>{{ current_user.role_number }}</strong> | Room: <strong>{{ current_user.room_number or 'Unassigned' }}</strong> | Dept: <strong>{{ current_user.department }} ({{ current_user.year }})</strong>
+        </p>
+      </div>
+      <div class="text-end">
+        <a href="{{ url_for('student.lms') }}" class="btn btn-warning text-dark fw-bold btn-sm shadow mb-1 me-1"><i class="fa-solid fa-graduation-cap me-1"></i> Open LMS Portal</a>
+        <div class="fs-6 fw-bold mt-1"><i class="fa-solid fa-clock text-warning me-1"></i> <span class="live-date-ticker">Loading date...</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Action Cards -->
+  <div class="row g-3 mb-4">
+    <div class="col-md-4 col-lg-20-pct col-6">
+      <a href="{{ url_for('student.food_selection') }}" class="text-decoration-none">
+        <div class="card card-custom p-3 stat-card stat-amber h-100">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <span class="text-muted small fw-semibold">Thu/Fri Food Choice</span>
+              <h5 class="fw-bold text-dark mb-0 mt-1">
+                {% if food_choice %}
+                  <span class="badge badge-{{ food_choice.food_choice }}">{{ food_choice.food_choice.upper() }}</span>
+                {% else %}
+                  <span class="badge bg-secondary">Not Selected</span>
+                {% endif %}
+              </h5>
+            </div>
+            <i class="fa-solid fa-egg text-warning fs-2"></i>
+          </div>
+        </div>
+      </a>
+    </div>
+
+    <div class="col-md-4 col-lg-20-pct col-6">
+      <a href="{{ url_for('student.cleaning_status') }}" class="text-decoration-none">
+        <div class="card card-custom p-3 stat-card stat-green h-100">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <span class="text-muted small fw-semibold">Room Cleaning Today</span>
+              <h5 class="fw-bold text-dark mb-0 mt-1">
+                {% if cleaning_record %}
+                  <span class="badge bg-success">{{ cleaning_record.status }}</span>
+                {% else %}
+                  <span class="badge bg-warning text-dark">Pending</span>
+                {% endif %}
+              </h5>
+            </div>
+            <i class="fa-solid fa-broom text-success fs-2"></i>
+          </div>
+        </div>
+      </a>
+    </div>
+
+    <div class="col-md-4 col-lg-20-pct col-6">
+      <a href="{{ url_for('student.sick_leave') }}" class="text-decoration-none">
+        <div class="card card-custom p-3 stat-card stat-red h-100 border-start border-4 border-danger">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <span class="text-muted small fw-semibold">Sick Leave / Hostel Stay</span>
+              <h5 class="fw-bold text-dark mb-0 mt-1">
+                {% if active_sick_leave %}
+                  {% if 'Approved' in active_sick_leave.status %}
+                    <span class="badge bg-success">Approved</span>
+                  {% elif active_sick_leave.status == 'Rejected' %}
+                    <span class="badge bg-danger">Rejected</span>
+                  {% else %}
+                    <span class="badge bg-warning text-dark">Pending</span>
+                  {% endif %}
+                {% else %}
+                  <span class="badge bg-light text-muted border">Apply</span>
+                {% endif %}
+              </h5>
+            </div>
+            <i class="fa-solid fa-notes-medical text-danger fs-2"></i>
+          </div>
+        </div>
+      </a>
+    </div>
+
+    <div class="col-md-4 col-lg-20-pct col-6">
+      <a href="{{ url_for('student.complaints') }}" class="text-decoration-none">
+        <div class="card card-custom p-3 stat-card stat-red h-100">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <span class="text-muted small fw-semibold">Active Complaints</span>
+              <h5 class="fw-bold text-dark mb-0 mt-1">{{ pending_complaints_count }} Pending</h5>
+            </div>
+            <i class="fa-solid fa-headset text-danger fs-2"></i>
+          </div>
+        </div>
+      </a>
+    </div>
+
+    <div class="col-md-4 col-lg-20-pct col-6">
+      <a href="{{ url_for('student.notifications') }}" class="text-decoration-none">
+        <div class="card card-custom p-3 stat-card stat-purple h-100">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <span class="text-muted small fw-semibold">Unread Notifications</span>
+              <h5 class="fw-bold text-dark mb-0 mt-1">{{ unread_notifications_count }} Unread</h5>
+            </div>
+            <i class="fa-solid fa-bell text-purple fs-2" style="color: var(--secondary-purple);"></i>
+          </div>
+        </div>
+      </a>
+    </div>
+  </div>
+
+  <!-- Today's Mess Menu & Upcoming Sunday Cleaning -->
+  <div class="row g-4">
+    <div class="col-md-7">
+      <div class="card card-custom p-4 border-0 shadow-sm h-100">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h5 class="fw-bold text-primary mb-0"><i class="fa-solid fa-utensils me-2"></i> Today's Mess Menu ({{ day_name }})</h5>
+          <a href="{{ url_for('public.mess') }}" class="btn btn-sm btn-outline-primary">Full Timetable</a>
+        </div>
+        
+        <ul class="list-group list-group-flush">
+          <li class="list-group-item d-flex justify-content-between py-3">
+            <div><strong class="text-dark"><i class="fa-solid fa-mug-hot text-warning me-2"></i> Breakfast:</strong></div>
+            <div class="text-muted">{{ today_menu.breakfast or 'Tiffin & Coffee/Tea' }}</div>
+          </li>
+          <li class="list-group-item d-flex justify-content-between py-3">
+            <div><strong class="text-dark"><i class="fa-solid fa-bowl-rice text-success me-2"></i> Lunch:</strong></div>
+            <div class="text-muted">{{ today_menu.lunch or 'Rice, Dal, Curry, Curd' }}</div>
+          </li>
+          <li class="list-group-item d-flex justify-content-between py-3">
+            <div><strong class="text-dark"><i class="fa-solid fa-cookie-bite text-info me-2"></i> Snacks:</strong></div>
+            <div class="text-muted">{{ today_menu.snacks or 'Tea & Evening Snacks' }}</div>
+          </li>
+          <li class="list-group-item d-flex justify-content-between py-3">
+            <div><strong class="text-dark"><i class="fa-solid fa-plate-wheat text-primary me-2"></i> Dinner:</strong></div>
+            <div class="text-muted">{{ today_menu.dinner or 'Chapathi, Rice, Special Curry' }}</div>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="col-md-5">
+      <div class="card card-custom p-4 border-0 shadow-sm mb-4">
+        <h5 class="fw-bold text-primary mb-3"><i class="fa-solid fa-spray-can-sparkles me-2"></i> Sunday Phenyl Cleaning Task</h5>
+        {% if sunday_task %}
+          <div class="p-3 bg-light rounded border">
+            <h6 class="fw-bold mb-1 text-dark">{{ sunday_task.task_name }}</h6>
+            <p class="small text-muted mb-2"><i class="fa-solid fa-calendar me-1"></i> Date: <strong>{{ sunday_task.date }}</strong></p>
+            <p class="small text-muted mb-2"><i class="fa-solid fa-building me-1"></i> Target: {{ sunday_task.rooms_or_floor }}</p>
+            <p class="small text-dark mb-0"><strong>Instructions:</strong> {{ sunday_task.instructions or 'Keep floor cleared for phenyl cleaning.' }}</p>
+          </div>
+        {% else %}
+          <p class="text-muted small mb-0">No upcoming Sunday cleaning task scheduled yet.</p>
+        {% endif %}
+      </div>
+
+      <div class="card card-custom p-4 border-0 shadow-sm">
+        <h5 class="fw-bold text-primary mb-3"><i class="fa-solid fa-bullhorn me-2"></i> Latest Announcements</h5>
+        {% if recent_notifications %}
+          <ul class="list-group list-group-flush small">
+            {% for n in recent_notifications[:3] %}
+              <li class="list-group-item px-0">
+                <strong class="text-dark d-block">{{ n.title }}</strong>
+                <span class="text-muted">{{ n.message }}</span>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="text-muted small mb-0">No recent notifications.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

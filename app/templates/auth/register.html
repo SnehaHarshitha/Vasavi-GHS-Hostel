@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+
+{% block title %}Student Registration - GHS Hostel{% endblock %}
+
+{% block content %}
+<div class="container py-4 py-md-5">
+  <div class="row justify-content-center">
+    <div class="col-md-8 col-lg-7">
+      <div class="card card-custom p-3 p-md-5 border-0 shadow-lg">
+        <div class="text-center mb-4">
+          <span class="badge bg-warning text-dark px-3 py-2 text-uppercase fw-bold mb-2">Sri Vasavi Engineering College</span>
+          <h3 class="fw-bold text-primary">Student Account Registration</h3>
+          <p class="text-muted small mb-0">Enter your approved Role Number to register your hostel student account.</p>
+        </div>
+
+        <form method="POST" action="{{ url_for('auth.register') }}" id="registerForm">
+          <div class="row g-3">
+            
+            <!-- 1. Role Number Verification Input -->
+            <div class="col-12">
+              <label class="form-label fw-semibold">College Role Number <span class="text-danger">*</span></label>
+              <div class="input-group">
+                <span class="input-group-text bg-light"><i class="fa-solid fa-id-card text-primary"></i></span>
+                <input type="text" id="role_number_input" name="role_number" class="form-control text-uppercase fw-bold" placeholder="e.g. 21A81A0501 or 23-109" value="{{ form_data.get('role_number', '') if form_data else '' }}" required>
+                <button type="button" class="btn btn-outline-primary fw-semibold" onclick="verifyRoleNumber()"><i class="fa-solid fa-magnifying-glass me-1"></i> Verify Role No.</button>
+              </div>
+              <div class="form-text text-muted small">Enter your college role number (partial matching will check first 2 and last 3 digits).</div>
+            </div>
+
+            <!-- Role Number Verification Feedback Alert Box -->
+            <div class="col-12 d-none" id="verificationAlertBox"></div>
+
+            <!-- 2. Student Full Name -->
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Full Name <span class="text-danger">*</span></label>
+              <input type="text" id="full_name_input" name="full_name" class="form-control" placeholder="Full Student Name" value="{{ form_data.get('full_name', '') if form_data else '' }}" required>
+            </div>
+
+            <!-- 3. Phone Number -->
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Phone Number <span class="text-danger">*</span></label>
+              <input type="tel" id="phone_input" name="phone" class="form-control" placeholder="+91 9876543210" value="{{ form_data.get('phone', '') if form_data else '' }}" required>
+            </div>
+
+            <!-- 4. Email Address -->
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Email Address</label>
+              <input type="email" id="email_input" name="email" class="form-control" placeholder="student@srivasaviengg.ac.in" value="{{ form_data.get('email', '') if form_data else '' }}">
+            </div>
+
+            <!-- 5. Department -->
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Department <span class="text-danger">*</span></label>
+              <select id="dept_select" name="department" class="form-select" required>
+                <option value="">Select Department...</option>
+                {% set selected_dept = form_data.get('department', '') if form_data else '' %}
+                <option value="CSE" {% if selected_dept == 'CSE' %}selected{% endif %}>CSE</option>
+                <option value="ECE" {% if selected_dept == 'ECE' %}selected{% endif %}>ECE</option>
+                <option value="EEE" {% if selected_dept == 'EEE' %}selected{% endif %}>EEE</option>
+                <option value="IT" {% if selected_dept == 'IT' %}selected{% endif %}>IT</option>
+                <option value="CIVIL" {% if selected_dept == 'CIVIL' %}selected{% endif %}>CIVIL</option>
+                <option value="MECHANICAL" {% if selected_dept == 'MECHANICAL' %}selected{% endif %}>MECHANICAL</option>
+                <option value="AI & ML" {% if selected_dept == 'AI & ML' %}selected{% endif %}>AI & ML</option>
+              </select>
+            </div>
+
+            <!-- 6. Semester -->
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Semester <span class="text-danger">*</span></label>
+              <select id="sem_select" name="semester" class="form-select" required>
+                {% set selected_sem = form_data.get('semester', '5') if form_data else '5' %}
+                <option value="1" {% if selected_sem == '1' %}selected{% endif %}>Sem 1</option>
+                <option value="2" {% if selected_sem == '2' %}selected{% endif %}>Sem 2</option>
+                <option value="3" {% if selected_sem == '3' %}selected{% endif %}>Sem 3</option>
+                <option value="4" {% if selected_sem == '4' %}selected{% endif %}>Sem 4</option>
+                <option value="5" {% if selected_sem == '5' or not selected_sem %}selected{% endif %}>Sem 5</option>
+                <option value="6" {% if selected_sem == '6' %}selected{% endif %}>Sem 6</option>
+                <option value="7" {% if selected_sem == '7' %}selected{% endif %}>Sem 7</option>
+                <option value="8" {% if selected_sem == '8' %}selected{% endif %}>Sem 8</option>
+              </select>
+            </div>
+
+            <!-- 7. Assigned Room Number -->
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Assigned Room Number</label>
+              <input type="text" name="room_number" class="form-control" placeholder="e.g. 101" value="{{ form_data.get('room_number', '101') if form_data else '101' }}">
+            </div>
+
+            <!-- 8. Password & Confirm Password -->
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Password <span class="text-danger">*</span></label>
+              <input type="password" name="password" class="form-control" placeholder="••••••••" required>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Confirm Password <span class="text-danger">*</span></label>
+              <input type="password" name="confirm_password" class="form-control" placeholder="••••••••" required>
+            </div>
+
+            <div class="col-12 mt-4">
+              <button type="submit" class="btn btn-warning btn-lg w-100 fw-bold shadow text-dark py-2">
+                <i class="fa-solid fa-user-plus me-2"></i> Register Student Account
+              </button>
+            </div>
+          </div>
+        </form>
+
+        <div class="text-center mt-4">
+          <p class="small text-muted mb-0">Already registered? <a href="{{ url_for('auth.login') }}" class="fw-bold text-primary">Login Here</a></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  function verifyRoleNumber() {
+    const roleInput = document.getElementById('role_number_input').value.trim();
+    const box = document.getElementById('verificationAlertBox');
+    if (!roleInput) {
+      box.className = 'col-12 alert alert-warning py-2 mb-0 shadow-sm';
+      box.innerHTML = '<i class="fa-solid fa-exclamation-triangle me-2"></i> Please enter a Role Number to verify.';
+      box.classList.remove('d-none');
+      return;
+    }
+
+    fetch('/auth/verify-role-number?role_number=' + encodeURIComponent(roleInput))
+      .then(res => res.json())
+      .then(data => {
+        box.classList.remove('d-none');
+        if (data.status === 'success') {
+          const cand = data.candidate;
+          box.className = 'col-12 alert alert-success py-2 mb-0 shadow-sm';
+          box.innerHTML = '<i class="fa-solid fa-circle-check me-2 fs-6"></i> <strong>Approved Record Found:</strong> ' + cand.full_name + ' (' + cand.roll_number + ') - ' + cand.department + ' Sem ' + cand.semester;
+          
+          if (cand.full_name && !document.getElementById('full_name_input').value) {
+            document.getElementById('full_name_input').value = cand.full_name;
+          }
+          if (cand.email && !document.getElementById('email_input').value) {
+            document.getElementById('email_input').value = cand.email;
+          }
+          if (cand.department) {
+            document.getElementById('dept_select').value = cand.department;
+          }
+          if (cand.semester) {
+            document.getElementById('sem_select').value = cand.semester;
+          }
+        } else {
+          box.className = 'col-12 alert alert-danger py-2 mb-0 shadow-sm';
+          box.innerHTML = '<i class="fa-solid fa-circle-xmark me-2 fs-6"></i> ' + data.message;
+        }
+      })
+      .catch(err => {
+        box.className = 'col-12 alert alert-danger py-2 mb-0 shadow-sm';
+        box.innerHTML = '<i class="fa-solid fa-triangle-exclamation me-2"></i> Error verifying role number.';
+        box.classList.remove('d-none');
+      });
+  }
+
+  document.getElementById('role_number_input').addEventListener('blur', function() {
+    if (this.value.trim().length >= 4) {
+      verifyRoleNumber();
+    }
+  });
+
+  {% if registration_success %}
+  document.addEventListener('DOMContentLoaded', function() {
+    Swal.fire({
+      title: 'Registration Successful!',
+      text: 'Your student account has been created.',
+      icon: 'success',
+      confirmButtonText: 'OK',
+      confirmButtonColor: '#198754'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        window.location.href = "{{ url_for('auth.login') }}";
+      }
+    });
+  });
+  {% endif %}
+</script>
+{% endblock %}
+
+

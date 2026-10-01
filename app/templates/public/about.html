@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}About PG Hostel Mess - Sri Vasavi Engineering College{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="text-center mb-5">
+    <span class="badge bg-primary px-3 py-2 text-uppercase mb-2">Sri Vasavi Engineering College</span>
+    <h1 class="fw-bold text-primary">About PG Girls Hostel & Mess</h1>
+    <p class="text-muted lead">Tadepalligudem, West Godavari District, Andhra Pradesh</p>
+  </div>
+
+  <div class="row g-4 mb-5 align-items-center">
+    <div class="col-md-6">
+      <h3 class="fw-bold text-dark">Sri Vasavi Engineering College</h3>
+      <p class="text-muted">
+        Sri Vasavi Engineering College, established in Tadepalligudem, West Godavari district, is a premier institution known for academic excellence, state-of-the-art laboratory infrastructure, and holistic student development.
+      </p>
+      <p class="text-muted">
+        The PG Girls Hostel was established to provide outstation female students with a secure, peaceful, clean, and homely residence within close proximity to academic blocks.
+      </p>
+      <div class="d-flex gap-3 mt-4">
+        <div class="p-3 bg-white rounded shadow-sm text-center border-start border-4 border-primary">
+          <h4 class="fw-bold text-primary mb-0">100%</h4>
+          <span class="small text-muted">24/7 Security & CCTV</span>
+        </div>
+        <div class="p-3 bg-white rounded shadow-sm text-center border-start border-4 border-success">
+          <h4 class="fw-bold text-success mb-0">Hygienic</h4>
+          <span class="small text-muted">Steam Kitchen Mess</span>
+        </div>
+        <div class="p-3 bg-white rounded shadow-sm text-center border-start border-4 border-warning">
+          <h4 class="fw-bold text-warning mb-0">RO Water</h4>
+          <span class="small text-muted">Purified Drinking Water</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6">
+      <div class="card card-custom p-4 border-0 shadow">
+        <h4 class="fw-bold text-primary mb-3"><i class="fa-solid fa-user-shield me-2"></i> Warden & Administration Office</h4>
+        <div class="d-flex align-items-center mb-3">
+          <div class="bg-primary text-white rounded-circle p-3 me-3">
+            <i class="fa-solid fa-user-nurse fs-3"></i>
+          </div>
+          <div>
+            <h5 class="mb-0 fw-bold">Chief Warden Office</h5>
+            <p class="text-muted small mb-0">PG Girls Hostel Administration</p>
+          </div>
+        </div>
+        <ul class="list-group list-group-flush small">
+          <li class="list-group-item d-flex justify-content-between">
+            <span>Resident Warden Hotline:</span> <strong>+91 98480 12345</strong>
+          </li>
+          <li class="list-group-item d-flex justify-content-between">
+            <span>Assistant Warden:</span> <strong>+91 98480 54321</strong>
+          </li>
+          <li class="list-group-item d-flex justify-content-between">
+            <span>Security Desk (24 Hours):</span> <strong>08818-284355</strong>
+          </li>
+          <li class="list-group-item d-flex justify-content-between">
+            <span>Medical Emergency Clinic:</span> <strong>On-Campus Dispensary</strong>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="text-center mt-4">
+    <a href="{{ url_for('public.rules') }}" class="btn btn-primary btn-lg shadow px-4"><i class="fa-solid fa-book me-2"></i> Read Detailed Hostel Rules & Regulations</a>
+  </div>
+</div>
+{% endblock %}

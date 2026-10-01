@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block title %}Contact Form Submissions - Admin Panel{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4 px-lg-5">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h2 class="fw-bold text-primary mb-1"><i class="fa-solid fa-envelope me-2"></i> Public Contact Form Messages</h2>
+      <p class="text-muted mb-0">Messages submitted from the website Contact Us page (Saved in MongoDB).</p>
+    </div>
+  </div>
+
+  <div class="card card-custom p-4 border-0 shadow-sm">
+    {% if messages %}
+      <div class="table-responsive">
+        <table class="table table-hover align-middle">
+          <thead class="table-light">
+            <tr>
+              <th>Date</th>
+              <th>Name</th>
+              <th>Email & Phone</th>
+              <th>Subject</th>
+              <th>Message Content</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for m in messages %}
+              <tr {% if m.status == 'Unread' %}class="table-warning"{% endif %}>
+                <td class="small text-muted">{{ m.created_at.strftime('%Y-%m-%d %H:%M') if m.created_at else '' }}</td>
+                <td class="fw-bold">{{ m.name }}</td>
+                <td class="small">
+                  <div>{{ m.email }}</div>
+                  <div class="text-muted">{{ m.phone or '-' }}</div>
+                </td>
+                <td><span class="badge bg-primary">{{ m.subject or 'General Inquiry' }}</span></td>
+                <td class="small" style="max-width: 300px;">{{ m.message }}</td>
+                <td>
+                  <span class="badge {% if m.status == 'Unread' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                    {{ m.status }}
+                  </span>
+                </td>
+                <td>
+                  {% if m.status == 'Unread' %}
+                    <form method="POST" action="{{ url_for('admin.mark_contact_read', msg_id=m._id) }}">
+                      <button type="submit" class="btn btn-sm btn-outline-success">Mark Read</button>
+                    </form>
+                  {% else %}
+                    <span class="text-muted small">Read</span>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="text-muted">No contact messages received yet.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

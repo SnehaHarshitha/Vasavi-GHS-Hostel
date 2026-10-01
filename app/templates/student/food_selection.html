@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block title %}Egg vs Veg Food Selection - PG Hostel Mess{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h2 class="fw-bold text-primary mb-1"><i class="fa-solid fa-egg me-2"></i> Thursday & Friday Food Choice</h2>
+      <p class="text-muted mb-0">Select your food preference for special meal days.</p>
+    </div>
+    <span class="badge bg-warning text-dark px-3 py-2 fw-bold">Today: {{ day_name }}, {{ today_str }}</span>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-md-6">
+      <div class="card card-custom p-4 border-0 shadow-sm h-100">
+        <h4 class="fw-bold text-dark mb-3">Make Selection for {{ today_str }}</h4>
+
+        {% if is_applicable_day %}
+          <div class="alert alert-info">
+            <i class="fa-solid fa-clock me-2"></i> Food selection window is currently <strong>OPEN</strong> for {{ day_name }}. Select your option below.
+          </div>
+
+          {% if today_choice %}
+            <div class="p-3 bg-light rounded border mb-3">
+              <span class="text-muted small d-block">Current Choice Saved:</span>
+              <h4 class="fw-bold text-success mb-0 mt-1">
+                <i class="fa-solid fa-check-circle me-1"></i> {{ today_choice.food_choice.upper() }}
+              </h4>
+              <span class="small text-muted">You can change your selection until deadline.</span>
+            </div>
+          {% endif %}
+
+          <form method="POST" action="{{ url_for('student.food_selection') }}">
+            <div class="row g-3 mb-4">
+              <div class="col-6">
+                <input type="radio" class="btn-check" name="food_choice" id="choice_egg" value="egg" autocomplete="off" {% if today_choice and today_choice.food_choice == 'egg' %}checked{% endif %}>
+                <label class="btn btn-outline-warning w-100 p-4 rounded-3 text-dark fw-bold border-2" for="choice_egg">
+                  <i class="fa-solid fa-egg fs-1 d-block mb-2 text-warning"></i>
+                  EGG OPTION
+                  <span class="d-block small text-muted font-normal mt-1">Egg Curry / Boiled Eggs</span>
+                </label>
+              </div>
+
+              <div class="col-6">
+                <input type="radio" class="btn-check" name="food_choice" id="choice_veg" value="veg" autocomplete="off" {% if today_choice and today_choice.food_choice == 'veg' %}checked{% endif %}>
+                <label class="btn btn-outline-success w-100 p-4 rounded-3 text-dark fw-bold border-2" for="choice_veg">
+                  <i class="fa-solid fa-seedling fs-1 d-block mb-2 text-success"></i>
+                  VEGETARIAN
+                  <span class="d-block small text-muted font-normal mt-1">Paneer / Veg Curry</span>
+                </label>
+              </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-lg w-100 fw-bold shadow">
+              <i class="fa-solid fa-save me-2"></i> Save Food Choice
+            </button>
+          </form>
+        {% else %}
+          <div class="alert alert-secondary py-4 text-center">
+            <i class="fa-solid fa-calendar-xmark fs-2 text-muted d-block mb-2"></i>
+            <h5 class="fw-bold">Selection Closed Today</h5>
+            <p class="small text-muted mb-0">Food choice selection is enabled only on <strong>Thursdays and Fridays</strong>.</p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="col-md-6">
+      <div class="card card-custom p-4 border-0 shadow-sm h-100">
+        <h4 class="fw-bold text-dark mb-3"><i class="fa-solid fa-history me-2"></i> Selection History</h4>
+        {% if history %}
+          <div class="table-responsive">
+            <table class="table table-hover align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th>Date</th>
+                  <th>Choice</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for item in history %}
+                  <tr>
+                    <td>{{ item.date }}</td>
+                    <td>
+                      <span class="badge badge-{{ item.food_choice }}">{{ item.food_choice.upper() }}</span>
+                    </td>
+                    <td><span class="badge bg-success">Recorded</span></td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <p class="text-muted">No past selections found.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

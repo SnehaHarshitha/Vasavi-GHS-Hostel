@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}System Settings - Admin Panel{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4 px-lg-5">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h2 class="fw-bold text-primary mb-1"><i class="fa-solid fa-sliders me-2"></i> Hostel System Settings</h2>
+      <p class="text-muted mb-0">Configure application variables, food choice windows, and registration toggles.</p>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-md-6">
+      <div class="card card-custom p-4 border-0 shadow-sm">
+        <h4 class="fw-bold text-dark mb-3"><i class="fa-solid fa-user-plus me-2 text-primary"></i> Registration & Approvals Toggle</h4>
+        <div class="form-check form-switch mb-3">
+          <input class="form-check-input" type="checkbox" id="regToggle" checked>
+          <label class="form-check-label fw-bold" for="regToggle">Enable New Student Online Registrations</label>
+        </div>
+        <p class="small text-muted mb-0">When disabled, new students cannot submit registration requests from the public site.</p>
+      </div>
+    </div>
+
+    <div class="col-md-6">
+      <div class="card card-custom p-4 border-0 shadow-sm">
+        <h4 class="fw-bold text-dark mb-3"><i class="fa-solid fa-clock me-2 text-warning"></i> Food Selection Window Rules</h4>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Applicable Food Choice Days</label>
+          <input type="text" class="form-control" value="Thursday, Friday" readonly>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Daily Lock-in Deadline Time</label>
+          <input type="time" class="form-control" value="21:00">
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

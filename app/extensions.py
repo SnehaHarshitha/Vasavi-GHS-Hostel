@@ -1,0 +1,96 @@
+import os
+from pymongo import MongoClient, ASCENDING
+from flask_login import LoginManager, UserMixin
+from bson.objectid import ObjectId
+
+login_manager = LoginManager()
+login_manager.login_view = 'auth.login'
+login_manager.login_message_category = 'warning'
+
+mongo_client = None
+db = None
+
+class User(UserMixin):
+    def __init__(self, user_data):
+        self.id = str(user_data.get('_id'))
+        self._id = user_data.get('_id')
+        self.full_name = user_data.get('full_name', '')
+        self.role_number = user_data.get('role_number', '')
+        self.email = user_data.get('email', '')
+        self.phone = user_data.get('phone', '')
+        self.password_hash = user_data.get('password_hash', '')
+        self.role = user_data.get('role', 'student') # student, warden, admin, principal
+        self.department = user_data.get('department', '')
+        self.year = user_data.get('year', '')
+        self.parent_name = user_data.get('parent_name', '')
+        self.parent_phone = user_data.get('parent_phone', '')
+        self.room_number = user_data.get('room_number', '')
+        self.status = user_data.get('status', 'approved') # pending, approved, rejected, blocked
+        self._is_active = user_data.get('is_active', True)
+        self.created_at = user_data.get('created_at')
+
+    @property
+    def is_active(self):
+        return self._is_active
+
+    def is_student(self):
+        return self.role == 'student'
+
+    def is_warden(self):
+        return self.role == 'warden'
+
+    def is_admin(self):
+        return self.role == 'admin'
+
+    def is_principal(self):
+        return self.role == 'principal'
+
+def init_mongo(app):
+    global mongo_client, db
+    mongo_uri = app.config.get('MONGO_URI')
+    db_name = app.config.get('DATABASE_NAME', 'pg_hostel_mess')
+    
+    try:
+        mongo_client = MongoClient(mongo_uri, serverSelectionTimeoutMS=3000)
+        mongo_client.admin.command('ping')
+        db = mongo_client[db_name]
+        app.logger.info("Successfully connected to MongoDB!")
+    except Exception as e:
+        app.logger.warning(f"Primary MONGO_URI connection failed ({e}). Attempting local fallback...")
+        try:
+            fallback_uri = 'mongodb://localhost:27017/pg_hostel_mess'
+            mongo_client = MongoClient(fallback_uri, serverSelectionTimeoutMS=3000)
+            mongo_client.admin.command('ping')
+            db = mongo_client[db_name]
+            app.logger.info("Successfully connected to local MongoDB fallback!")
+        except Exception as fallback_err:
+            app.logger.error(f"Error connecting to MongoDB: {fallback_err}")
+            db = None
+            return
+
+    if db is not None:
+        try:
+            db.users.create_index([("role_number", ASCENDING)], unique=True, sparse=True)
+            db.users.create_index([("email", ASCENDING)], unique=True, sparse=True)
+            db.rooms.create_index([("room_number", ASCENDING)], unique=True)
+            db.food_selections.create_index([("student_id", ASCENDING), ("date", ASCENDING)], unique=True)
+        except Exception as idx_err:
+            app.logger.warning(f"Error setting up MongoDB indexes: {idx_err}")
+
+
+def get_db():
+    global db
+    return db
+
+@login_manager.user_loader
+def load_user(user_id):
+    database = get_db()
+    if database is None:
+        return None
+    try:
+        user_data = database.users.find_one({"_id": ObjectId(user_id)})
+        if user_data:
+            return User(user_data)
+    except Exception:
+        return None
+    return None

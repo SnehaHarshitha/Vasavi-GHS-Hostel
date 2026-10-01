@@ -1,0 +1,240 @@
+{% extends "base.html" %}
+
+{% block title %}PG Hostel Mess - Sri Vasavi Engineering College{% endblock %}
+
+{% block extra_css %}
+<style>
+  .svec-header-banner {
+    background: #ffffff;
+    border-bottom: 3px solid #047857;
+    padding: 16px 0;
+  }
+  .svec-title {
+    color: #065f46;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    font-size: 1.85rem;
+  }
+  .svec-subtext {
+    color: #b91c1c;
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+  .svec-campus-hero-bg {
+    background: linear-gradient(rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.35)),
+                url("{{ url_for('static', filename='images/svec_campus.jpg') }}");
+    background-size: cover;
+    background-position: center;
+    border-radius: 20px;
+    padding: 4.5rem 2rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    color: #ffffff;
+    text-shadow: 0 2px 6px rgba(0, 0, 0, 0.7);
+    position: relative;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Sri Vasavi Engineering College Official Header Banner -->
+<div class="svec-header-banner shadow-sm mb-4">
+  <div class="container">
+    <div class="row align-items-center text-center text-md-start g-3">
+      <div class="col-md-2 text-center">
+        <!-- College Logo -->
+        <div class="d-inline-block bg-white p-2 rounded-circle border shadow-sm">
+          <img src="{{ url_for('static', filename='images/vasavi_logo.png') }}" alt="Sri Vasavi Logo" style="height: 65px; width: 65px; object-fit: contain;">
+        </div>
+      </div>
+      <div class="col-md-7 text-center">
+        <div class="d-flex justify-content-center gap-3 text-muted small fw-bold mb-1">
+          <span class="text-danger">ESTD: 2001</span>
+          <span class="text-primary">COUNSELLING CODE: VSVT</span>
+        </div>
+        <h2 class="svec-title mb-0">SRI VASAVI ENGINEERING COLLEGE <span class="fs-5 text-dark">(AUTONOMOUS)</span></h2>
+        <div class="svec-subtext mt-1">
+          Sponsored by: <strong class="text-dark">SRI VASAVI EDUCATIONAL SOCIETY</strong> | website: <a href="https://srivasaviengg.ac.in" target="_blank" class="text-decoration-none">www.srivasaviengg.ac.in</a>
+        </div>
+        <div class="small text-muted fw-semibold">Pedatadepalli, Tadepalligudem - 534 101, W.G.Dist, (A.P.)</div>
+      </div>
+      <div class="col-md-3 text-center text-md-end">
+        <div class="d-inline-flex gap-2">
+          <span class="badge bg-success p-2 text-uppercase fw-bold"><i class="fa-solid fa-award me-1"></i> NBA Accredited</span>
+          <span class="badge bg-warning text-dark p-2 text-uppercase fw-bold"><i class="fa-solid fa-star me-1"></i> NAAC 'A' Grade</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Main Campus Hero Section -->
+<div class="container mb-4">
+  <div class="svec-campus-hero-bg text-center position-relative">
+    
+    <!-- ROLE BASED CONTROLS FOR HOME HERO -->
+    {% if current_user.is_authenticated and (current_user.is_warden() or current_user.is_admin()) %}
+      <div class="position-absolute top-0 end-0 m-3 no-print">
+        <button class="btn btn-warning btn-sm fw-bold shadow" data-bs-toggle="modal" data-bs-target="#editHomeModal">
+          <i class="fa-solid fa-pen-to-square me-1"></i> Edit Home Content
+        </button>
+      </div>
+    {% endif %}
+
+    <span class="badge bg-warning text-dark px-3 py-2 rounded-pill fw-bold text-uppercase mb-3 shadow-sm" style="text-shadow: none;">
+      <i class="fa-solid fa-shield-halved me-1"></i> {{ home_hero.get('subtext', 'Sri Vasavi Engineering College Girls Hostel') }}
+    </span>
+    <h2 class="display-5 fw-bold mb-3 text-white">{{ home_hero.get('title', 'Modern, Safe & Hygienic Girls Hostel Management') }}</h2>
+    <p class="lead mb-4 text-white opacity-95 max-w-2xl mx-auto fw-medium" style="font-size: 1.1rem; line-height: 1.6;">
+      {{ home_hero.get('description', 'Providing state-of-the-art living facilities, nutritious mess meals with egg/veg selection, daily room cleaning verification, and 24/7 dedicated security for female engineering students.') }}
+    </p>
+
+    <div class="d-flex justify-content-center gap-3 flex-wrap">
+      {% if not current_user.is_authenticated %}
+        <a href="{{ url_for('auth.login') }}" class="btn btn-warning btn-lg px-4 fw-bold shadow" style="text-shadow: none;"><i class="fa-solid fa-right-to-bracket me-2"></i> User Login Portal</a>
+        <a href="{{ url_for('auth.register') }}" class="btn btn-outline-light btn-lg px-4 fw-semibold"><i class="fa-solid fa-user-plus me-2"></i> Register as Student</a>
+      {% else %}
+        {% if current_user.is_student() %}
+          <a href="{{ url_for('student.dashboard') }}" class="btn btn-warning btn-lg px-4 fw-bold shadow" style="text-shadow: none;"><i class="fa-solid fa-gauge me-2"></i> Go to Student Dashboard</a>
+        {% elif current_user.is_warden() %}
+          <a href="{{ url_for('warden.dashboard') }}" class="btn btn-warning btn-lg px-4 fw-bold shadow" style="text-shadow: none;"><i class="fa-solid fa-user-shield me-2"></i> Go to Warden Dashboard</a>
+        {% elif current_user.is_principal() %}
+          <a href="{{ url_for('principal.dashboard') }}" class="btn btn-warning btn-lg px-4 fw-bold shadow" style="text-shadow: none;"><i class="fa-solid fa-user-tie me-2"></i> Go to Principal Portal</a>
+        {% else %}
+          <a href="{{ url_for('admin.dashboard') }}" class="btn btn-warning btn-lg px-4 fw-bold shadow" style="text-shadow: none;"><i class="fa-solid fa-gauge me-2"></i> Admin Dashboard</a>
+        {% endif %}
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Live Date & Stats Bar -->
+<div class="container mb-4">
+  <div class="card card-custom p-3 shadow-lg border-0">
+    <div class="row align-items-center g-3 text-center text-md-start">
+      <div class="col-md-4">
+        <span class="badge bg-primary px-3 py-2 fs-6 fw-bold"><i class="fa-solid fa-calendar-day me-1"></i> Today's Live Date:</span>
+      </div>
+      <div class="col-md-8 text-center text-md-end">
+        <span class="live-date-ticker fs-5 fw-bold text-primary">Loading date...</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Core Features Grid -->
+<div class="container mb-5">
+  <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap">
+    <div>
+      <h3 class="fw-bold text-success mb-0">Key Hostel & Mess Services</h3>
+      <p class="text-muted mb-0">Automated solutions for student convenience and hostel administration</p>
+    </div>
+    
+    <!-- ADMIN CONTROL: ADD SECTION -->
+    {% if current_user.is_authenticated and current_user.is_admin() %}
+      <button class="btn btn-success btn-sm fw-bold shadow no-print" data-bs-toggle="modal" data-bs-target="#addSectionModal">
+        <i class="fa-solid fa-plus me-1"></i> Add Section
+      </button>
+    {% endif %}
+  </div>
+
+  <div class="row g-4">
+    {% for sec in home_sections %}
+      <div class="col-md-4">
+        <div class="card card-custom h-100 p-4 text-center border-0 shadow-sm position-relative">
+          
+          <!-- ADMIN CONTROL: DELETE SECTION -->
+          {% if current_user.is_authenticated and current_user.is_admin() %}
+            <div class="position-absolute top-0 end-0 m-2 no-print">
+              <form method="POST" action="{{ url_for('public.delete_home_section', section_id=sec._id) }}" onsubmit="return confirm('Delete this section?');">
+                <button type="submit" class="btn btn-sm btn-outline-danger py-0 px-2" title="Delete Section"><i class="fa-solid fa-trash"></i></button>
+              </form>
+            </div>
+          {% endif %}
+
+          <div class="fs-1 text-{{ sec.color }} mb-3"><i class="fa-solid {{ sec.icon }}"></i></div>
+          <h5 class="fw-bold">{{ sec.title }}</h5>
+          <p class="small text-muted mb-0">{{ sec.description }}</p>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- EDIT HOME MODAL (Warden & Admin) -->
+{% if current_user.is_authenticated and (current_user.is_warden() or current_user.is_admin()) %}
+<div class="modal fade" id="editHomeModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-warning text-dark">
+        <h5 class="modal-title fw-bold"><i class="fa-solid fa-pen-to-square me-2"></i> Edit Home Banner Content</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="POST" action="{{ url_for('public.edit_home_content') }}">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Sub-heading Badge</label>
+            <input type="text" name="subtext" class="form-control" value="{{ home_hero.get('subtext', '') }}" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Main Hero Title</label>
+            <input type="text" name="title" class="form-control" value="{{ home_hero.get('title', '') }}" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Hero Description / Summary</label>
+            <textarea name="description" class="form-control" rows="4" required>{{ home_hero.get('description', '') }}</textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-warning fw-bold">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- ADD SECTION MODAL (Admin Only) -->
+{% if current_user.is_authenticated and current_user.is_admin() %}
+<div class="modal fade" id="addSectionModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-success text-white">
+        <h5 class="modal-title fw-bold"><i class="fa-solid fa-plus-circle me-2"></i> Add Key Service Section</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="POST" action="{{ url_for('public.add_home_section') }}">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Section Title</label>
+            <input type="text" name="title" class="form-control" placeholder="e.g. 24/7 RO Mineral Water" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">FontAwesome Icon Class</label>
+            <input type="text" name="icon" class="form-control" placeholder="e.g. fa-bottle-water" value="fa-star" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Color Style</label>
+            <select name="color" class="form-select">
+              <option value="primary">Primary (Blue)</option>
+              <option value="success">Success (Green)</option>
+              <option value="warning">Warning (Yellow)</option>
+              <option value="danger">Danger (Red)</option>
+              <option value="info">Info (Teal)</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Description</label>
+            <textarea name="description" class="form-control" rows="3" placeholder="Description of the service..." required></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-success fw-bold">Add Section</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}System Admin Dashboard - PG Hostel Mess & LMS{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4 px-lg-5">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <span class="badge bg-danger px-3 py-1 text-white text-uppercase fw-bold">Super Admin Control Center</span>
+      <h2 class="fw-bold text-primary mt-1 mb-0">System Control Desk & LMS Edit Mode</h2>
+    </div>
+    <span class="badge bg-light text-dark fs-6 p-2 border"><i class="fa-solid fa-calendar me-1"></i> {{ today_str }}</span>
+  </div>
+
+  <!-- Admin Stats Row 1: Hostel -->
+  <div class="row g-3 mb-4">
+    <div class="col-md-4">
+      <div class="card card-custom p-3 stat-card stat-primary">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <span class="text-muted small fw-semibold">Active Registered Students</span>
+            <h3 class="fw-bold text-dark mb-0 mt-1">{{ total_students }}</h3>
+          </div>
+          <i class="fa-solid fa-users text-primary fs-1"></i>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="card card-custom p-3 stat-card stat-purple">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <span class="text-muted small fw-semibold">Approved Student List</span>
+            <h3 class="fw-bold text-dark mb-0 mt-1">{{ total_approved_students }} Students</h3>
+          </div>
+          <i class="fa-solid fa-user-check text-purple fs-1"></i>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="card card-custom p-3 stat-card stat-amber">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <span class="text-muted small fw-semibold">LMS Announcements</span>
+            <h3 class="fw-bold text-dark mb-0 mt-1">{{ total_announcements }} Notices</h3>
+          </div>
+          <i class="fa-solid fa-bullhorn text-warning fs-1"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Prominent LMS Action Banner -->
+  <div class="card card-custom p-4 mb-4 bg-gradient text-white shadow-sm" style="background: linear-gradient(135deg, #1e3a8a, #6b21a8);">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center">
+      <div>
+        <h4 class="fw-bold mb-1"><i class="fa-solid fa-graduation-cap text-warning me-2"></i> LMS Content & Timetable Control Center</h4>
+        <p class="mb-0 text-white-50">Manage Food Timetable, Announcements, and Approved Student Lists.</p>
+      </div>
+      <a href="{{ url_for('admin.lms_dashboard') }}" class="btn btn-warning btn-lg text-dark fw-bold mt-3 mt-md-0 px-4 shadow">
+        <i class="fa-solid fa-pen-to-square me-2"></i> Open Control Center
+      </a>
+    </div>
+  </div>
+
+  <!-- Additional Control Buttons -->
+  <div class="card card-custom p-3 mb-4 bg-light border">
+    <div class="d-flex gap-2 flex-wrap">
+      <a href="{{ url_for('admin.users') }}" class="btn btn-primary fw-bold"><i class="fa-solid fa-user-gear me-1"></i> User Accounts & Roles</a>
+      <a href="{{ url_for('admin.lms_dashboard') }}" class="btn btn-success fw-bold"><i class="fa-solid fa-file-pdf me-1"></i> Approved Student List & PDF Bulk Import</a>
+      <a href="{{ url_for('admin.contact_messages') }}" class="btn btn-outline-primary fw-bold"><i class="fa-solid fa-envelope me-1"></i> View Contact Submissions ({{ unread_messages }})</a>
+      <a href="{{ url_for('admin.settings') }}" class="btn btn-outline-secondary fw-bold"><i class="fa-solid fa-sliders me-1"></i> Hostel Settings</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

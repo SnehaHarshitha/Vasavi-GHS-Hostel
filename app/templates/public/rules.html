@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block title %}Hostel Rules & Regulations - PG Hostel Mess{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap">
+    <div>
+      <span class="badge bg-danger text-uppercase px-3 py-2">Code of Conduct</span>
+      <h1 class="fw-bold text-primary mt-2">PG Girls Hostel Rules & Guidelines</h1>
+      <p class="text-muted">Sri Vasavi Engineering College, Tadepalligudem</p>
+    </div>
+    
+    <div class="d-flex gap-2 no-print">
+      {% if current_user.is_authenticated and current_user.is_admin() %}
+        <button class="btn btn-success fw-bold" data-bs-toggle="modal" data-bs-target="#addRuleModal">
+          <i class="fa-solid fa-plus me-1"></i> Add Rule Section
+        </button>
+      {% endif %}
+      <button onclick="window.print()" class="btn btn-outline-dark"><i class="fa-solid fa-print me-2"></i> Print Rules Document</button>
+    </div>
+  </div>
+
+  {% for rule in rules_list %}
+    <div class="card card-custom p-4 border-0 shadow-sm mb-4 position-relative">
+      
+      <!-- ROLE-BASED CONTROLS -->
+      <div class="position-absolute top-0 end-0 m-3 d-flex gap-2 no-print">
+        {% if current_user.is_authenticated and (current_user.is_warden() or current_user.is_admin() or current_user.is_principal()) %}
+          <button class="btn btn-sm btn-outline-primary fw-semibold" data-bs-toggle="modal" data-bs-target="#editRuleModal{{ rule._id }}">
+            <i class="fa-solid fa-pen-to-square me-1"></i> Edit Rule
+          </button>
+        {% endif %}
+        {% if current_user.is_authenticated and current_user.is_admin() %}
+          <form method="POST" action="{{ url_for('public.delete_rule', rule_id=rule._id) }}" onsubmit="return confirm('Delete this rule section?');">
+            <button type="submit" class="btn btn-sm btn-outline-danger fw-semibold"><i class="fa-solid fa-trash me-1"></i> Delete</button>
+          </form>
+        {% endif %}
+      </div>
+
+      <h4 class="fw-bold text-primary mb-3 me-5"><i class="fa-solid {{ rule.icon or 'fa-book-bookmark' }} me-2"></i> {{ loop.index }}. {{ rule.title }}</h4>
+      <ul class="text-muted mb-0">
+        {% for item in rule.rule_points %}
+          <li class="mb-2">{{ item }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <!-- EDIT RULE MODAL (Warden & Admin) -->
+    {% if current_user.is_authenticated and (current_user.is_warden() or current_user.is_admin() or current_user.is_principal()) %}
+    <div class="modal fade" id="editRuleModal{{ rule._id }}" tabindex="-1">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header bg-primary text-white">
+            <h5 class="modal-title fw-bold"><i class="fa-solid fa-pen-to-square me-2"></i> Edit Rule Section</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+          </div>
+          <form method="POST" action="{{ url_for('public.edit_rule', rule_id=rule._id) }}">
+            <div class="modal-body">
+              <div class="mb-3">
+                <label class="form-label fw-semibold">Section Title</label>
+                <input type="text" name="title" class="form-control" value="{{ rule.title }}" required>
+              </div>
+              <div class="mb-3">
+                <label class="form-label fw-semibold">Icon Class</label>
+                <input type="text" name="icon" class="form-control" value="{{ rule.icon or 'fa-book-bookmark' }}">
+              </div>
+              <div class="mb-3">
+                <label class="form-label fw-semibold">Rule Points (One per line)</label>
+                <textarea name="items_text" class="form-control" rows="6" required>{% for item in rule.rule_points %}{{ item }}
+{% endfor %}</textarea>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+              <button type="submit" class="btn btn-primary fw-bold">Save Changes</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  {% endfor %}
+
+  <!-- ADD RULE MODAL (Admin Only) -->
+  {% if current_user.is_authenticated and current_user.is_admin() %}
+  <div class="modal fade" id="addRuleModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header bg-success text-white">
+          <h5 class="modal-title fw-bold"><i class="fa-solid fa-plus-circle me-2"></i> Add Rule Section</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <form method="POST" action="{{ url_for('public.add_rule') }}">
+          <div class="modal-body">
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Rule Section Title</label>
+              <input type="text" name="title" class="form-control" placeholder="e.g. Study Hours & Quiet Time" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Icon Class</label>
+              <input type="text" name="icon" class="form-control" placeholder="e.g. fa-volume-xmark" value="fa-book-bookmark">
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Rule Points (Enter one point per line)</label>
+              <textarea name="items_text" class="form-control" rows="6" placeholder="Strict silence must be maintained from 9:00 PM to 6:00 AM." required></textarea>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-success fw-bold">Add Rule Section</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

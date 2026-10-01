@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block title %}Mess Management - Warden Portal{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4 px-lg-5">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h2 class="fw-bold text-primary mb-1"><i class="fa-solid fa-utensils me-2"></i> Mess Timetable & Food Choice Monitoring</h2>
+      <p class="text-muted mb-0">Update menu items and track Thursday/Friday Egg vs Veg counts.</p>
+    </div>
+    <a href="{{ url_for('warden.export_food_selection', date=today_str) }}" class="btn btn-success fw-bold shadow">
+      <i class="fa-solid fa-file-csv me-1"></i> Export Food Choice CSV
+    </a>
+  </div>
+
+  <!-- Food Count Card -->
+  <div class="card card-custom p-4 border-0 shadow-sm mb-4 bg-light">
+    <h5 class="fw-bold text-dark mb-3"><i class="fa-solid fa-chart-pie me-2 text-warning"></i> Today's Food Choice Summary ({{ today_str }})</h5>
+    <div class="row text-center">
+      <div class="col-md-3 col-6">
+        <h3 class="fw-bold text-warning mb-0">{{ food_counts.egg_count }}</h3>
+        <span class="text-muted small">Total Egg Meals</span>
+      </div>
+      <div class="col-md-3 col-6">
+        <h3 class="fw-bold text-success mb-0">{{ food_counts.veg_count }}</h3>
+        <span class="text-muted small">Total Vegetarian Meals</span>
+      </div>
+      <div class="col-md-3 col-6">
+        <h3 class="fw-bold text-primary mb-0">{{ food_counts.total_selected }}</h3>
+        <span class="text-muted small">Total Selections Submitted</span>
+      </div>
+      <div class="col-md-3 col-6">
+        <h3 class="fw-bold text-secondary mb-0">{{ food_counts.pending_count }}</h3>
+        <span class="text-muted small">Pending Choices</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <!-- Menu Update Form -->
+    <div class="col-md-5">
+      <div class="card card-custom p-4 border-0 shadow-sm">
+        <h4 class="fw-bold text-primary mb-3">Update Daily Menu</h4>
+        <form method="POST" action="{{ url_for('warden.mess_management') }}">
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Day of Week</label>
+            <select name="day" class="form-select" required>
+              <option value="Monday">Monday</option>
+              <option value="Tuesday">Tuesday</option>
+              <option value="Wednesday">Wednesday</option>
+              <option value="Thursday">Thursday (Egg/Veg)</option>
+              <option value="Friday">Friday (Egg/Veg)</option>
+              <option value="Saturday">Saturday</option>
+              <option value="Sunday">Sunday</option>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Meal Type</label>
+            <select name="meal_type" class="form-select" required>
+              <option value="breakfast">Breakfast</option>
+              <option value="lunch">Lunch</option>
+              <option value="snacks">Snacks</option>
+              <option value="dinner" selected>Dinner</option>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Menu Items</label>
+            <textarea name="menu_items" class="form-control" rows="3" placeholder="e.g. Idli, Sambar, Coconut Chutney, Tea/Coffee" required></textarea>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Special Announcement / Note</label>
+            <input type="text" name="special_note" class="form-control" placeholder="e.g. Festival Special Sweets">
+          </div>
+
+          <button type="submit" class="btn btn-primary w-100 fw-bold shadow">
+            <i class="fa-solid fa-save me-2"></i> Update Menu & Notify Students
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Timetable Preview -->
+    <div class="col-md-7">
+      <div class="card card-custom p-4 border-0 shadow-sm">
+        <h4 class="fw-bold text-primary mb-3">Current Weekly Timetable</h4>
+        <div class="table-responsive">
+          <table class="table table-bordered align-middle text-center small mb-0">
+            <thead class="table-primary">
+              <tr>
+                <th>Day</th>
+                <th>Breakfast</th>
+                <th>Lunch</th>
+                <th>Dinner</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for day, meals in timetable.items() %}
+                <tr {% if day in ['Thursday', 'Friday'] %}class="table-warning"{% endif %}>
+                  <td class="fw-bold">{{ day }}</td>
+                  <td>{{ meals.breakfast or '-' }}</td>
+                  <td>{{ meals.lunch or '-' }}</td>
+                  <td>{{ meals.dinner or '-' }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

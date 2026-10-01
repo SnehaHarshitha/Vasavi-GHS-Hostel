@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Students - Warden Portal{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4 px-lg-5">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h2 class="fw-bold text-primary mb-1"><i class="fa-solid fa-users me-2"></i> Registered Students Directory</h2>
+      <p class="text-muted mb-0">Approve, assign rooms, or block student accounts.</p>
+    </div>
+    <div class="btn-group">
+      <a href="{{ url_for('warden.students', status='all') }}" class="btn btn-outline-primary {% if status_filter=='all' %}active{% endif %}">All Students</a>
+      <a href="{{ url_for('warden.students', status='pending') }}" class="btn btn-outline-warning {% if status_filter=='pending' %}active{% endif %}">Pending</a>
+      <a href="{{ url_for('warden.students', status='approved') }}" class="btn btn-outline-success {% if status_filter=='approved' %}active{% endif %}">Approved</a>
+    </div>
+  </div>
+
+  <div class="card card-custom p-4 border-0 shadow-sm">
+    {% if students %}
+      <div class="table-responsive">
+        <table class="table table-hover align-middle">
+          <thead class="table-light">
+            <tr>
+              <th>Role Number</th>
+              <th>Student Name</th>
+              <th>Dept & Year</th>
+              <th>Phone</th>
+              <th>Parent Phone</th>
+              <th>Room #</th>
+              <th>Status</th>
+              <th>Room Assign / Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for s in students %}
+              <tr>
+                <td><strong class="text-primary">{{ s.role_number }}</strong></td>
+                <td class="fw-bold">{{ s.full_name }}</td>
+                <td>{{ s.department }} ({{ s.year }})</td>
+                <td>{{ s.phone }}</td>
+                <td>{{ s.parent_name }} ({{ s.parent_phone }})</td>
+                <td>
+                  <span class="badge bg-dark">{{ s.room_number or 'Unassigned' }}</span>
+                </td>
+                <td>
+                  <span class="badge {% if s.status == 'approved' %}bg-success{% elif s.status == 'pending' %}bg-warning text-dark{% else %}bg-danger{% endif %}">
+                    {{ s.status }}
+                  </span>
+                </td>
+                <td>
+                  <div class="d-flex gap-1 align-items-center">
+                    {% if s.status == 'pending' %}
+                      <form method="POST" action="{{ url_for('warden.student_action', student_id=s._id, action='approve') }}">
+                        <button type="submit" class="btn btn-sm btn-success fw-bold">Approve</button>
+                      </form>
+                      <form method="POST" action="{{ url_for('warden.student_action', student_id=s._id, action='reject') }}">
+                        <button type="submit" class="btn btn-sm btn-outline-danger">Reject</button>
+                      </form>
+                    {% else %}
+                      <!-- Room Allocation Form -->
+                      <form method="POST" action="{{ url_for('warden.student_action', student_id=s._id, action='assign_room') }}" class="d-flex gap-1">
+                        <select name="room_number" class="form-select form-select-sm" style="width: 110px;" required>
+                          <option value="">Room...</option>
+                          {% for r in rooms %}
+                            <option value="{{ r.room_number }}" {% if s.room_number == r.room_number %}selected{% endif %}>{{ r.room_number }}</option>
+                          {% endfor %}
+                        </select>
+                        <button type="submit" class="btn btn-sm btn-outline-primary"><i class="fa-solid fa-bed"></i> Set</button>
+                      </form>
+                    {% endif %}
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="text-muted">No students found for status "{{ status_filter }}".</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

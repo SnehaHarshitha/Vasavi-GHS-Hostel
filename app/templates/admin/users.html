@@ -1,0 +1,200 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Users & Roles - Admin Panel{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4 px-lg-5">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h2 class="fw-bold text-primary mb-1"><i class="fa-solid fa-user-gear me-2"></i> User & Role Management</h2>
+      <p class="text-muted mb-0">Create Students, Wardens, Principals, Administrators, or manage existing accounts.</p>
+    </div>
+    <button class="btn btn-primary fw-bold shadow" data-bs-toggle="modal" data-bs-target="#newUserModal">
+      <i class="fa-solid fa-user-plus me-1"></i> Add New User / Student
+    </button>
+  </div>
+
+  <div class="card card-custom p-4 border-0 shadow-sm">
+    {% if users %}
+      <div class="table-responsive">
+        <table class="table table-hover align-middle">
+          <thead class="table-light">
+            <tr>
+              <th>Full Name</th>
+              <th>Email / Roll No</th>
+              <th>Role</th>
+              <th>Room / Phone</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for u in users %}
+              <tr>
+                <td class="fw-bold">{{ u.full_name }}</td>
+                <td>
+                  {{ u.email or '-' }}
+                  {% if u.role_number %}
+                    <div class="small text-muted"><i class="fa-solid fa-id-card me-1"></i> {{ u.role_number }}</div>
+                  {% endif %}
+                </td>
+                <td>
+                  <span class="badge {% if u.role == 'admin' %}bg-danger{% elif u.role == 'principal' %}bg-purple text-white{% elif u.role == 'warden' %}bg-primary{% elif u.role == 'student' %}bg-info text-dark{% else %}bg-secondary{% endif %}" {% if u.role == 'principal' %}style="background-color: var(--secondary-purple);"{% endif %}>
+                    {{ u.role.upper() }}
+                  </span>
+                </td>
+                <td>
+                  {% if u.room_number %}
+                    <span class="badge bg-light text-dark border me-1"><i class="fa-solid fa-door-closed me-1 text-primary"></i> Room {{ u.room_number }}</span>
+                  {% endif %}
+                  {% if u.phone %}
+                    <span class="small text-muted d-block">{{ u.phone }}</span>
+                  {% endif %}
+                  {% if not u.room_number and not u.phone %}
+                    -
+                  {% endif %}
+                </td>
+                <td><span class="badge bg-success">{{ u.status }}</span></td>
+                <td>
+                  {% if u.email != current_user.email %}
+                    <form method="POST" action="{{ url_for('admin.delete_user', user_id=u._id) }}" onsubmit="return confirm('Delete this user account?');">
+                      <button type="submit" class="btn btn-sm btn-outline-danger"><i class="fa-solid fa-trash"></i> Delete</button>
+                    </form>
+                  {% else %}
+                    <span class="badge bg-light text-dark">Current Admin</span>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="text-muted">No users found.</p>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Add User Modal -->
+<div class="modal fade" id="newUserModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-header-title text-white fw-bold mb-0">Add New User Account (Student / Staff)</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="POST" action="{{ url_for('admin.users') }}">
+        <div class="modal-body p-4">
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Assign Role <span class="text-danger">*</span></label>
+            <select name="role" id="userRoleSelect" class="form-select" required>
+              <option value="student" selected>STUDENT</option>
+              <option value="warden">WARDEN</option>
+              <option value="principal">PRINCIPAL</option>
+              <option value="admin">ADMINISTRATOR</option>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Full Name <span class="text-danger">*</span></label>
+            <input type="text" name="full_name" class="form-control" placeholder="e.g. Test Student or Dr. Lakshmi" required>
+          </div>
+
+          <!-- Student specific fields -->
+          <div id="studentFieldsBlock">
+            <div class="row g-2 mb-3">
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Roll / Role Number <span class="text-danger">*</span></label>
+                <input type="text" name="role_number" id="roleNumberInput" class="form-control" placeholder="e.g. TEST001 or 21A81A0501">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Allocated Room Number</label>
+                <input type="text" name="room_number" class="form-control" placeholder="e.g. 101">
+              </div>
+            </div>
+            <div class="row g-2 mb-3">
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Department</label>
+                <select name="department" class="form-select">
+                  <option value="CSE">CSE</option>
+                  <option value="ECE">ECE</option>
+                  <option value="EEE">EEE</option>
+                  <option value="IT">IT</option>
+                  <option value="MECH">MECH</option>
+                  <option value="CIVIL">CIVIL</option>
+                  <option value="AI&DS">AI & DS</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Year of Study</label>
+                <select name="year" class="form-select">
+                  <option value="1st Year">1st Year</option>
+                  <option value="2nd Year">2nd Year</option>
+                  <option value="3rd Year" selected>3rd Year</option>
+                  <option value="4th Year">4th Year</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Email Address</label>
+            <input type="email" name="email" class="form-control" placeholder="student@example.com">
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Phone Number</label>
+            <input type="tel" name="phone" class="form-control" placeholder="+91 9876543210">
+          </div>
+
+          <div class="row g-2 mb-3">
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Password <span class="text-danger">*</span></label>
+              <input type="password" name="password" class="form-control" required placeholder="Enter password">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Confirm Password <span class="text-danger">*</span></label>
+              <input type="password" name="confirm_password" class="form-control" required placeholder="Confirm password">
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Account Status</label>
+            <select name="status" class="form-select">
+              <option value="approved" selected>approved</option>
+              <option value="pending">pending</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer bg-light">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary fw-bold">Create User Account</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% block extra_js %}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const roleSelect = document.getElementById('userRoleSelect');
+    const studentBlock = document.getElementById('studentFieldsBlock');
+    const roleInput = document.getElementById('roleNumberInput');
+
+    function toggleStudentFields() {
+      if (roleSelect.value === 'student') {
+        studentBlock.style.display = 'block';
+        roleInput.setAttribute('required', 'required');
+      } else {
+        studentBlock.style.display = 'none';
+        roleInput.removeAttribute('required');
+      }
+    }
+
+    roleSelect.addEventListener('change', toggleStudentFields);
+    toggleStudentFields();
+  });
+</script>
+{% endblock %}
+{% endblock %}

@@ -1,0 +1,2052 @@
+{% extends "base.html" %}
+
+{% block title %}LMS Management & Staff Attendance - Admin Panel{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+  <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 pb-2 border-bottom">
+    <div>
+      <h2 class="fw-bold mb-1"><i class="fa-solid fa-sliders text-warning me-2"></i> System Content & Timetable Control Center</h2>
+      <p class="text-muted mb-0">Full Edit Access for Admin — Edit Food Timetable, Announcements, Approved Students, and Daily Staff Attendance.</p>
+    </div>
+    <div class="mt-3 mt-md-0 d-flex gap-2 flex-wrap">
+      <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-arrow-left me-1"></i> Dashboard</a>
+      <a href="{{ url_for('public.mess') }}" target="_blank" class="btn btn-outline-warning btn-sm fw-semibold"><i class="fa-solid fa-utensils me-1"></i> Public Mess Menu</a>
+      <a href="{{ url_for('student.lms') }}" target="_blank" class="btn btn-outline-primary btn-sm fw-semibold"><i class="fa-solid fa-eye me-1"></i> Preview LMS View</a>
+    </div>
+  </div>
+
+  <!-- Navigation Tabs -->
+  <ul class="nav nav-pills nav-pills-scrollable mb-4 flex-column flex-sm-row gap-2 border bg-white p-2 rounded shadow-sm align-items-center" id="lmsTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+      <button class="nav-link {% if active_tab == 'mess' or not active_tab or active_tab not in ['mess', 'students', 'announcements', 'staff'] %}active{% endif %} fw-semibold w-100" id="mess-tab" data-bs-toggle="pill" data-bs-target="#tab-mess" type="button" role="tab">
+        <i class="fa-solid fa-utensils me-2 text-warning"></i> Food Timetable ({{ mess_items|length }})
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link {% if active_tab == 'students' %}active{% endif %} fw-semibold w-100" id="students-tab" data-bs-toggle="pill" data-bs-target="#tab-students" type="button" role="tab">
+        <i class="fa-solid fa-user-check me-2"></i> Approved Students List ({{ approved_students|length }})
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link {% if active_tab == 'announcements' %}active{% endif %} fw-semibold w-100" id="announcements-tab" data-bs-toggle="pill" data-bs-target="#tab-announcements" type="button" role="tab">
+        <i class="fa-solid fa-bullhorn me-2 text-warning"></i> Announcements ({{ announcements|length }})
+      </button>
+    </li>
+    <!-- FAR RIGHT ALIGNED BUTTON FOR STAFF ATTENDANCE -->
+    <li class="nav-item ms-sm-auto" role="presentation">
+      <button class="nav-link {% if active_tab == 'staff' %}active{% endif %} fw-bold w-100 btn-warning text-dark border shadow-sm" id="staff-tab" data-bs-toggle="pill" data-bs-target="#tab-staff" type="button" role="tab">
+        <i class="fa-solid fa-clipboard-user me-2 text-primary"></i> + Staff Attendance
+      </button>
+    </li>
+  </ul>
+
+  <!-- Tab Contents -->
+  <div class="tab-content" id="lmsTabContent">
+
+    <!-- TAB 1: FOOD TIMETABLE / MESS MENU -->
+    <div class="tab-pane fade {% if active_tab == 'mess' or not active_tab or active_tab not in ['mess', 'students', 'announcements', 'staff'] %}show active{% endif %}" id="tab-mess" role="tabpanel">
+      <div class="card card-custom p-4 shadow-sm mb-4">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-3">
+          <div>
+            <h5 class="fw-bold mb-1"><i class="fa-solid fa-utensils text-warning me-2"></i> Food & Mess Timetable Management</h5>
+            <p class="small text-muted mb-0">Database-driven weekly mess menu schedule. All edits immediately reflect on the public website & student portal.</p>
+          </div>
+          <button type="button" class="btn btn-primary btn-sm fw-semibold mt-2 mt-md-0" data-bs-toggle="modal" data-bs-target="#addMessItemModal">
+            <i class="fa-solid fa-plus me-1"></i> Add Food Entry
+          </button>
+        </div>
+
+        <div class="table-responsive">
+          <table class="table table-hover align-middle">
+            <thead class="table-light">
+              <tr>
+                <th>Day</th>
+                <th>Meal Type</th>
+                <th>Time Slot</th>
+                <th>Food Menu Items</th>
+                <th>Special Note / Rule</th>
+                <th class="text-end">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for m in mess_items %}
+              <tr>
+                <td class="fw-bold text-primary">{{ m.day }}</td>
+                <td>
+                  <span class="badge {% if m.meal_type == 'breakfast' %}bg-info text-dark{% elif m.meal_type == 'lunch' %}bg-success{% elif m.meal_type == 'snacks' %}bg-warning text-dark{% else %}bg-purple text-white{% endif %} text-uppercase">
+                    {{ m.meal_type }}
+                  </span>
+                </td>
+                <td class="fw-semibold small text-muted"><i class="fa-regular fa-clock me-1"></i> {{ m.time or 'Standard' }}</td>
+                <td class="fw-semibold text-dark">{{ m.menu_items }}</td>
+                <td class="small text-muted">
+                  {% if m.special_note %}
+                    <span class="badge badge-egg"><i class="fa-solid fa-star me-1"></i> {{ m.special_note }}</span>
+                  {% else %}
+                    <span class="text-muted">—</span>
+                  {% endif %}
+                </td>
+                <td class="text-end">
+                  <button type="button" class="btn btn-sm btn-outline-primary me-1" data-bs-toggle="modal" data-bs-target="#editMessModal{{ m._id }}">
+                    <i class="fa-solid fa-pen-to-square me-1"></i> Edit
+                  </button>
+                  <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteMessModal{{ m._id }}">
+                    <i class="fa-solid fa-trash me-1"></i> Delete
+                  </button>
+                </td>
+              </tr>
+              {% else %}
+              <tr>
+                <td colspan="6" class="text-center text-muted py-4">No mess timetable items found. Click <strong>Add Food Entry</strong>.</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: APPROVED STUDENTS -->
+    <div class="tab-pane fade {% if active_tab == 'students' %}show active{% endif %}" id="tab-students" role="tabpanel">
+      
+      <!-- Summary Counter Cards for Approved Students -->
+      {% set reg_count = approved_students|selectattr('is_registered')|list|length %}
+      {% set unreg_count = approved_students|length - reg_count %}
+      <div class="row g-3 mb-4">
+        <div class="col-md-4">
+          <div class="card card-custom p-3 border-start border-primary border-4 shadow-sm text-center">
+            <div class="small text-uppercase text-muted fw-bold">Total Approved Students</div>
+            <div class="fs-3 fw-bold text-primary mt-1">{{ approved_students|length }}</div>
+            <div class="small text-muted mt-1">Managed by Admin</div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card card-custom p-3 border-start border-success border-4 shadow-sm text-center">
+            <div class="small text-uppercase text-muted fw-bold">Registered & Active</div>
+            <div class="fs-3 fw-bold text-success mt-1">{{ reg_count }}</div>
+            <div class="small text-muted mt-1">Registered Student Accounts</div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card card-custom p-3 border-start border-warning border-4 shadow-sm text-center">
+            <div class="small text-uppercase text-muted fw-bold">Not Registered Yet</div>
+            <div class="fs-3 fw-bold text-warning mt-1">{{ unreg_count }}</div>
+            <div class="small text-muted mt-1">Pending Student Sign-ups</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card card-custom p-4 shadow-sm mb-4">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-3">
+          <div>
+            <h5 class="fw-bold mb-1"><i class="fa-solid fa-shield-halved text-success me-2"></i> Admin-Approved Student List & Access Control</h5>
+            <p class="small text-muted mb-0">Only students listed here are permitted to register for student accounts. Prevents unauthorized users.</p>
+          </div>
+          <div class="d-flex gap-2 mt-2 mt-md-0">
+            <button type="button" class="btn btn-primary btn-sm fw-semibold" data-bs-toggle="modal" data-bs-target="#addApprovedStudentModal">
+              <i class="fa-solid fa-plus me-1"></i> Add Approved Student
+            </button>
+            <button type="button" class="btn btn-outline-danger btn-sm fw-semibold" data-bs-toggle="modal" data-bs-target="#importPdfModal">
+              <i class="fa-solid fa-file-pdf me-1"></i> Import Students from PDF
+            </button>
+          </div>
+        </div>
+
+        <!-- Search and Filter Controls -->
+        <div class="row g-2 mb-3 bg-light p-3 rounded border">
+          <div class="col-md-4">
+            <label class="form-label fw-bold small text-muted mb-1"><i class="fa-solid fa-magnifying-glass me-1"></i> Search Student</label>
+            <input type="text" id="stuSearchInput" class="form-control form-control-sm" placeholder="Search by Roll Number, Name, Email..." onkeyup="filterApprovedStudentsTable()">
+          </div>
+          <div class="col-md-3 col-6">
+            <label class="form-label fw-bold small text-muted mb-1"><i class="fa-solid fa-building me-1"></i> Department</label>
+            <select id="stuDeptFilter" class="form-select form-select-sm" onchange="filterApprovedStudentsTable()">
+              <option value="">All Departments</option>
+              <option value="CSE">CSE</option>
+              <option value="ECE">ECE</option>
+              <option value="EEE">EEE</option>
+              <option value="IT">IT</option>
+              <option value="CIVIL">CIVIL</option>
+              <option value="MECHANICAL">MECHANICAL</option>
+              <option value="AI & ML">AI & ML</option>
+            </select>
+          </div>
+          <div class="col-md-2 col-6">
+            <label class="form-label fw-bold small text-muted mb-1"><i class="fa-solid fa-graduation-cap me-1"></i> Semester</label>
+            <select id="stuSemFilter" class="form-select form-select-sm" onchange="filterApprovedStudentsTable()">
+              <option value="">All Semesters</option>
+              <option value="1">Sem 1</option>
+              <option value="2">Sem 2</option>
+              <option value="3">Sem 3</option>
+              <option value="4">Sem 4</option>
+              <option value="5">Sem 5</option>
+              <option value="6">Sem 6</option>
+              <option value="7">Sem 7</option>
+              <option value="8">Sem 8</option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label fw-bold small text-muted mb-1"><i class="fa-solid fa-check-circle me-1"></i> Registration Status</label>
+            <select id="stuStatusFilter" class="form-select form-select-sm" onchange="filterApprovedStudentsTable()">
+              <option value="">All Statuses</option>
+              <option value="Registered & Active">Registered & Active</option>
+              <option value="Not Registered Yet">Not Registered Yet</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="table table-hover align-middle" id="approvedStudentsTable">
+            <thead class="table-light">
+              <tr>
+                <th>Roll Number</th>
+                <th>Full Name</th>
+                <th>Email</th>
+                <th>Department</th>
+                <th>Semester</th>
+                <th>Registration Status</th>
+                <th>Registration Date</th>
+                <th class="text-end">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for s in approved_students %}
+              <tr class="stu-row" data-roll="{{ s.roll_number }}" data-name="{{ s.full_name }}" data-email="{{ s.email }}" data-dept="{{ s.department }}" data-sem="{{ s.semester }}" data-status="{% if s.is_registered %}Registered & Active{% else %}Not Registered Yet{% endif %}">
+                <td class="fw-bold text-primary">{{ s.roll_number }}</td>
+                <td class="fw-semibold text-dark">{{ s.full_name }}</td>
+                <td>{{ s.email }}</td>
+                <td><span class="badge bg-secondary">{{ s.department }}</span></td>
+                <td><span class="badge bg-info text-dark">Sem {{ s.semester }}</span></td>
+                <td>
+                  {% if s.is_registered %}
+                    <span class="badge bg-success"><i class="fa-solid fa-check me-1"></i> Registered & Active</span>
+                  {% else %}
+                    <span class="badge bg-warning text-dark"><i class="fa-solid fa-clock me-1"></i> Not Registered Yet</span>
+                  {% endif %}
+                </td>
+                <td class="small text-muted">
+                  {% if s.registered_at %}
+                    {{ s.registered_at.strftime('%Y-%m-%d') }}
+                  {% elif s.is_registered %}
+                    Registered
+                  {% else %}
+                    —
+                  {% endif %}
+                </td>
+                <td class="text-end">
+                  <button type="button" class="btn btn-sm btn-outline-primary me-1" data-bs-toggle="modal" data-bs-target="#editApprovedStudentModal{{ s._id }}">
+                    <i class="fa-solid fa-pen-to-square me-1"></i> Edit
+                  </button>
+                  <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteApprovedStudentModal{{ s._id }}">
+                    <i class="fa-solid fa-trash me-1"></i> Delete
+                  </button>
+                </td>
+              </tr>
+              {% else %}
+              <tr>
+                <td colspan="8" class="text-center text-muted py-4">No approved students added yet. Click <strong>Add Approved Student</strong> or <strong>Bulk Import</strong>.</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: ANNOUNCEMENTS -->
+    <div class="tab-pane fade {% if active_tab == 'announcements' %}show active{% endif %}" id="tab-announcements" role="tabpanel">
+      <div class="card card-custom p-4 shadow-sm mb-4">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-3">
+          <div>
+            <h5 class="fw-bold mb-1"><i class="fa-solid fa-bullhorn text-warning me-2"></i> Manage LMS Announcements</h5>
+            <p class="small text-muted mb-0">Publish notices, exam schedules, and academic updates for students.</p>
+          </div>
+          <button type="button" class="btn btn-primary btn-sm fw-semibold mt-2 mt-md-0" data-bs-toggle="modal" data-bs-target="#addAnnouncementModal">
+            <i class="fa-solid fa-plus me-1"></i> Add Announcement
+          </button>
+        </div>
+
+        <div class="list-group list-group-flush shadow-sm rounded">
+          {% for a in announcements %}
+          <div class="list-group-item p-3">
+            <div class="d-flex justify-content-between align-items-start">
+              <div>
+                <span class="badge {% if a.priority == 'High' %}bg-danger{% elif a.priority == 'Medium' %}bg-warning text-dark{% else %}bg-info text-dark{% endif %} me-2">{{ a.priority }} Priority</span>
+                <strong class="fs-6 text-dark">{{ a.title }}</strong>
+                <p class="mt-2 text-muted mb-1">{{ a.content }}</p>
+                <div class="small text-muted"><i class="fa-regular fa-clock me-1"></i> Published: {{ a.created_at.strftime('%b %d, %Y') if a.created_at else 'Recent' }}</div>
+              </div>
+              <div class="d-flex gap-1">
+                <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editAncModal{{ a._id }}">
+                  <i class="fa-solid fa-pen-to-square"></i> Edit
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteAncModal{{ a._id }}">
+                  <i class="fa-solid fa-trash"></i> Delete
+                </button>
+              </div>
+            </div>
+          </div>
+          {% else %}
+          <div class="text-center text-muted py-4">No announcements posted yet. Click <strong>Add Announcement</strong>.</div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- TAB 4: NEW FEATURE — DAILY STAFF ATTENDANCE MANAGEMENT    -->
+    <!-- ========================================================= -->
+    <div class="tab-pane fade {% if active_tab == 'staff' %}show active{% endif %}" id="tab-staff" role="tabpanel">
+      
+      <!-- Date Filter Bar & Quick Actions -->
+      <div class="card card-custom p-3 shadow-sm mb-4 bg-light border">
+        <form method="GET" action="{{ url_for('admin.lms_dashboard') }}" class="row g-3 align-items-center">
+          <input type="hidden" name="active_tab" value="staff">
+          <div class="col-md-4 col-sm-6">
+            <label class="form-label fw-bold small text-uppercase text-muted mb-1"><i class="fa-solid fa-calendar-day me-1 text-primary"></i> Select Attendance Date</label>
+            <input type="date" name="date" class="form-control fw-semibold" value="{{ selected_date }}" onchange="this.form.submit()">
+          </div>
+          <div class="col-md-4 col-sm-6 text-md-start mt-4">
+            <button type="submit" class="btn btn-primary fw-semibold btn-sm px-3"><i class="fa-solid fa-filter me-1"></i> Load Attendance Date</button>
+            <a href="{{ url_for('admin.download_attendance_csv', date=selected_date) }}" class="btn btn-outline-success fw-semibold btn-sm ms-2"><i class="fa-solid fa-file-csv me-1"></i> Download CSV</a>
+          </div>
+          <div class="col-md-4 text-md-end mt-4">
+            <button type="button" class="btn btn-danger btn-sm fw-semibold me-1 shadow-sm" data-bs-toggle="modal" data-bs-target="#importStaffPdfModal">
+              <i class="fa-solid fa-file-pdf me-1"></i> Import Staff from PDF
+            </button>
+            <button type="button" class="btn btn-success btn-sm fw-semibold me-1 shadow-sm" data-bs-toggle="modal" data-bs-target="#addCaretakerModal">
+              <i class="fa-solid fa-user-plus me-1"></i> + Add Caretaker
+            </button>
+            <button type="button" class="btn btn-primary btn-sm fw-semibold shadow-sm" data-bs-toggle="modal" data-bs-target="#addWorkingStaffModal">
+              <i class="fa-solid fa-user-gear me-1"></i> + Add Working Staff
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Section 1: Staff Attendance Dashboard Counters -->
+      <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+          <div class="card card-custom p-3 border-start border-primary border-4 shadow-sm text-center">
+            <div class="small text-uppercase text-muted fw-bold">Total Caretakers</div>
+            <div class="fs-3 fw-bold text-primary mt-1">{{ attendance_stats.total_caretakers }}</div>
+            <div class="small text-muted mt-1"><span class="text-success fw-bold">{{ attendance_stats.caretakers_present }}</span> Present / <span class="text-danger fw-bold">{{ attendance_stats.caretakers_absent }}</span> Absent</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="card card-custom p-3 border-start border-info border-4 shadow-sm text-center">
+            <div class="small text-uppercase text-muted fw-bold">Total Working Staff</div>
+            <div class="fs-3 fw-bold text-info mt-1">{{ attendance_stats.total_working_staff }}</div>
+            <div class="small text-muted mt-1"><span class="text-success fw-bold">{{ attendance_stats.working_staff_present }}</span> Present / <span class="text-danger fw-bold">{{ attendance_stats.working_staff_absent }}</span> Absent</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="card card-custom p-3 border-start border-success border-4 shadow-sm text-center">
+            <div class="small text-uppercase text-muted fw-bold">Total Present Today</div>
+            <div class="fs-3 fw-bold text-success mt-1">{{ attendance_stats.total_present }}</div>
+            <div class="small text-muted mt-1">Out of {{ attendance_stats.total_staff }} Active Staff</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="card card-custom p-3 border-start border-danger border-4 shadow-sm text-center">
+            <div class="small text-uppercase text-muted fw-bold">Total Absent Today</div>
+            <div class="fs-3 fw-bold text-danger mt-1">{{ attendance_stats.total_absent }}</div>
+            <div class="small text-muted mt-1"><span class="text-warning fw-bold">{{ attendance_stats.total_leave }}</span> On Leave / <span class="text-secondary fw-bold">{{ attendance_stats.not_marked }}</span> Not Marked</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 2: Sub-tabs for Names List, Attendance Grid, Caretakers, Working Staff & Reports -->
+      <ul class="nav nav-tabs nav-tabs-bordered mb-3 gap-2 flex-column flex-sm-row" id="staffSubTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+          <button class="nav-link active fw-bold" id="subtab-names-btn" data-bs-toggle="tab" data-bs-target="#subtab-names" type="button" role="tab">
+            <i class="fa-solid fa-users-rectangle me-1 text-primary"></i> Present & Absent Names List ({{ selected_date }})
+          </button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link fw-bold" id="subtab-mark-btn" data-bs-toggle="tab" data-bs-target="#subtab-mark" type="button" role="tab">
+            <i class="fa-solid fa-list-check me-1 text-success"></i> Mark Daily Attendance
+          </button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link fw-bold" id="subtab-caretakers-btn" data-bs-toggle="tab" data-bs-target="#subtab-caretakers" type="button" role="tab">
+            <i class="fa-solid fa-broom me-1 text-warning"></i> Caretakers ({{ caretakers|length }})
+          </button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link fw-bold" id="subtab-workingstaff-btn" data-bs-toggle="tab" data-bs-target="#subtab-workingstaff" type="button" role="tab">
+            <i class="fa-solid fa-user-gear me-1 text-info"></i> Working Staff ({{ working_staff|length }})
+          </button>
+        </li>
+      </ul>
+
+      <div class="tab-content border-top pt-3" id="staffSubTabContent">
+
+        <!-- SUBTAB 1: PRESENT & ABSENT EXACT NAMES LIST FOR ADMIN -->
+        <div class="tab-pane fade show active" id="subtab-names" role="tabpanel">
+          <div class="card card-custom p-4 shadow-sm mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <div>
+                <h5 class="fw-bold mb-1"><i class="fa-solid fa-clipboard-check text-success me-2"></i> Daily Staff Attendance Names Directory ({{ selected_date }})</h5>
+                <p class="small text-muted mb-0">Direct view of exact present, absent, on leave, and un-marked staff names for the selected date.</p>
+              </div>
+            </div>
+
+            <!-- Categorized Pills for Present / Absent / On Leave / Not Marked -->
+            <ul class="nav nav-pills mb-3 gap-2" id="namesCategoryPills" role="tablist">
+              <li class="nav-item" role="presentation">
+                <button class="nav-link active bg-success text-white fw-bold px-3 py-1" id="pill-present-btn" data-bs-toggle="pill" data-bs-target="#pill-present" type="button" role="tab">
+                  <i class="fa-solid fa-check-circle me-1"></i> Present Staff ({{ categorized_staff_names.present|length }})
+                </button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link bg-danger text-white fw-bold px-3 py-1" id="pill-absent-btn" data-bs-toggle="pill" data-bs-target="#pill-absent" type="button" role="tab">
+                  <i class="fa-solid fa-times-circle me-1"></i> Absent Staff ({{ categorized_staff_names.absent|length }})
+                </button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link bg-warning text-dark fw-bold px-3 py-1" id="pill-leave-btn" data-bs-toggle="pill" data-bs-target="#pill-leave" type="button" role="tab">
+                  <i class="fa-solid fa-user-clock me-1"></i> On Leave ({{ categorized_staff_names.on_leave|length }})
+                </button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link bg-secondary text-white fw-bold px-3 py-1" id="pill-notmarked-btn" data-bs-toggle="pill" data-bs-target="#pill-notmarked" type="button" role="tab">
+                  <i class="fa-solid fa-question-circle me-1"></i> Not Marked ({{ categorized_staff_names.not_marked|length }})
+                </button>
+              </li>
+            </ul>
+
+            <div class="tab-content border p-3 rounded bg-white shadow-sm" id="namesPillContent">
+              <!-- PRESENT NAMES -->
+              <div class="tab-pane fade show active" id="pill-present" role="tabpanel">
+                <h6 class="fw-bold text-success mb-3"><i class="fa-solid fa-circle-check me-2"></i> List of Present Staff Members ({{ selected_date }})</h6>
+                <div class="table-responsive">
+                  <table class="table table-hover align-middle table-sm">
+                    <thead class="table-light">
+                      <tr>
+                        <th>#</th>
+                        <th>Staff ID</th>
+                        <th>Full Name</th>
+                        <th>Category</th>
+                        <th>Job Role / Work</th>
+                        <th>Shift</th>
+                        <th>Check-In</th>
+                        <th>Check-Out</th>
+                        <th>Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for st in categorized_staff_names.present %}
+                      <tr>
+                        <td>{{ loop.index }}</td>
+                        <td class="fw-bold text-primary">{{ st.staff_id }}</td>
+                        <td class="fw-bold text-dark">{{ st.full_name }}</td>
+                        <td><span class="badge {% if st.category == 'Caretaker' %}bg-warning text-dark{% else %}bg-info text-dark{% endif %}">{{ st.category }}</span></td>
+                        <td><span class="badge bg-light text-dark border">{{ st.job_role }}</span></td>
+                        <td>{{ st.shift }}</td>
+                        <td><span class="badge bg-success p-1"><i class="fa-regular fa-clock me-1"></i> {{ st.check_in or '08:00 AM' }}</span></td>
+                        <td><span class="badge bg-secondary p-1"><i class="fa-regular fa-clock me-1"></i> {{ st.check_out or '05:00 PM' }}</span></td>
+                        <td>
+                          {% if st.att_id %}
+                          <button type="button" class="btn btn-sm btn-outline-primary p-1 px-2" data-bs-toggle="modal" data-bs-target="#editAttModal{{ st.att_id }}">
+                            <i class="fa-solid fa-pen-to-square me-1"></i> Edit
+                          </button>
+                          {% endif %}
+                        </td>
+                      </tr>
+                      {% else %}
+                      <tr><td colspan="9" class="text-center text-muted py-3">No staff members marked Present for {{ selected_date }}.</td></tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- ABSENT NAMES -->
+              <div class="tab-pane fade" id="pill-absent" role="tabpanel">
+                <h6 class="fw-bold text-danger mb-3"><i class="fa-solid fa-circle-xmark me-2"></i> List of Absent Staff Members ({{ selected_date }})</h6>
+                <div class="table-responsive">
+                  <table class="table table-hover align-middle table-sm">
+                    <thead class="table-light">
+                      <tr>
+                        <th>#</th>
+                        <th>Staff ID</th>
+                        <th>Full Name</th>
+                        <th>Category</th>
+                        <th>Job Role / Work</th>
+                        <th>Shift</th>
+                        <th>Remarks</th>
+                        <th>Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for st in categorized_staff_names.absent %}
+                      <tr>
+                        <td>{{ loop.index }}</td>
+                        <td class="fw-bold text-danger">{{ st.staff_id }}</td>
+                        <td class="fw-bold text-dark">{{ st.full_name }}</td>
+                        <td><span class="badge {% if st.category == 'Caretaker' %}bg-warning text-dark{% else %}bg-info text-dark{% endif %}">{{ st.category }}</span></td>
+                        <td><span class="badge bg-light text-dark border">{{ st.job_role }}</span></td>
+                        <td>{{ st.shift }}</td>
+                        <td class="small text-danger fst-italic">{{ st.remarks or 'Uninformed absence' }}</td>
+                        <td>
+                          {% if st.att_id %}
+                          <button type="button" class="btn btn-sm btn-outline-primary p-1 px-2" data-bs-toggle="modal" data-bs-target="#editAttModal{{ st.att_id }}">
+                            <i class="fa-solid fa-pen-to-square me-1"></i> Edit
+                          </button>
+                          {% endif %}
+                        </td>
+                      </tr>
+                      {% else %}
+                      <tr><td colspan="8" class="text-center text-muted py-3">No staff members marked Absent for {{ selected_date }}.</td></tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- ON LEAVE NAMES -->
+              <div class="tab-pane fade" id="pill-leave" role="tabpanel">
+                <h6 class="fw-bold text-warning mb-3"><i class="fa-solid fa-user-clock me-2"></i> List of Staff Members On Approved Leave ({{ selected_date }})</h6>
+                <div class="table-responsive">
+                  <table class="table table-hover align-middle table-sm">
+                    <thead class="table-light">
+                      <tr>
+                        <th>#</th>
+                        <th>Staff ID</th>
+                        <th>Full Name</th>
+                        <th>Category</th>
+                        <th>Job Role / Work</th>
+                        <th>Shift</th>
+                        <th>Remarks / Leave Reason</th>
+                        <th>Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for st in categorized_staff_names.on_leave %}
+                      <tr>
+                        <td>{{ loop.index }}</td>
+                        <td class="fw-bold text-warning">{{ st.staff_id }}</td>
+                        <td class="fw-bold text-dark">{{ st.full_name }}</td>
+                        <td><span class="badge {% if st.category == 'Caretaker' %}bg-warning text-dark{% else %}bg-info text-dark{% endif %}">{{ st.category }}</span></td>
+                        <td><span class="badge bg-light text-dark border">{{ st.job_role }}</span></td>
+                        <td>{{ st.shift }}</td>
+                        <td class="small text-muted">{{ st.remarks or 'Approved leave' }}</td>
+                        <td>
+                          {% if st.att_id %}
+                          <button type="button" class="btn btn-sm btn-outline-primary p-1 px-2" data-bs-toggle="modal" data-bs-target="#editAttModal{{ st.att_id }}">
+                            <i class="fa-solid fa-pen-to-square me-1"></i> Edit
+                          </button>
+                          {% endif %}
+                        </td>
+                      </tr>
+                      {% else %}
+                      <tr><td colspan="8" class="text-center text-muted py-3">No staff members on leave for {{ selected_date }}.</td></tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- NOT MARKED NAMES -->
+              <div class="tab-pane fade" id="pill-notmarked" role="tabpanel">
+                <h6 class="fw-bold text-secondary mb-3"><i class="fa-solid fa-circle-question me-2"></i> Active Staff Pending Attendance Marking ({{ selected_date }})</h6>
+                <div class="table-responsive">
+                  <table class="table table-hover align-middle table-sm">
+                    <thead class="table-light">
+                      <tr>
+                        <th>#</th>
+                        <th>Staff ID</th>
+                        <th>Full Name</th>
+                        <th>Category</th>
+                        <th>Job Role / Work</th>
+                        <th>Shift</th>
+                        <th>Phone</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for st in categorized_staff_names.not_marked %}
+                      <tr>
+                        <td>{{ loop.index }}</td>
+                        <td class="fw-bold text-primary">{{ st.staff_id }}</td>
+                        <td class="fw-bold text-dark">{{ st.full_name }}</td>
+                        <td><span class="badge {% if st.category == 'Caretaker' %}bg-warning text-dark{% else %}bg-info text-dark{% endif %}">{{ st.category }}</span></td>
+                        <td><span class="badge bg-light text-dark border">{{ st.job_role }}</span></td>
+                        <td>{{ st.shift }}</td>
+                        <td>{{ st.phone or '—' }}</td>
+                      </tr>
+                      {% else %}
+                      <tr><td colspan="7" class="text-center text-success py-3">✓ All active staff members have attendance logged for {{ selected_date }}.</td></tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- SUBTAB 2: DAILY ATTENDANCE MARKING GRID -->
+        <div class="tab-pane fade" id="subtab-mark" role="tabpanel">
+          <div class="card card-custom p-4 shadow-sm mb-4">
+            <h5 class="fw-bold mb-3"><i class="fa-solid fa-pen-clip me-2 text-success"></i> Mark Daily Staff Attendance ({{ selected_date }})</h5>
+            
+            <form method="POST" action="{{ url_for('admin.save_staff_attendance') }}">
+              <input type="hidden" name="date" value="{{ selected_date }}">
+
+              <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                  <thead class="table-light">
+                    <tr>
+                      <th>#</th>
+                      <th>Staff ID</th>
+                      <th>Full Name & Role</th>
+                      <th>Category</th>
+                      <th>Attendance Status</th>
+                      <th>Check-In</th>
+                      <th>Check-Out</th>
+                      <th>Remarks</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% set all_active = caretakers + working_staff %}
+                    {% for st in all_active %}
+                      {% set s_id = st.staff_id %}
+                      {% set rec = None %}
+                      {% for r in daily_attendance_records %}
+                        {% if r.staff_id == s_id %}
+                          {% set rec = r %}
+                        {% endif %}
+                      {% endfor %}
+                      <input type="hidden" name="staff_ids" value="{{ s_id }}">
+                      <tr>
+                        <td>{{ loop.index }}</td>
+                        <td class="fw-bold text-primary">{{ s_id }}</td>
+                        <td>
+                          <div class="fw-bold text-dark">{{ st.full_name }}</div>
+                          <small class="text-muted">{{ st.assigned_work or st.job_role or 'Staff' }} ({{ st.shift }})</small>
+                        </td>
+                        <td><span class="badge {% if st.category == 'Caretaker' %}bg-warning text-dark{% else %}bg-info text-dark{% endif %}">{{ st.category or ('Caretaker' if st.assigned_work is defined else 'Working Staff') }}</span></td>
+                        <td style="min-width: 170px;">
+                          {% set cur_status = rec.attendance_status if rec else 'Present' %}
+                          <select name="status_{{ s_id }}" class="form-select form-select-sm fw-semibold {% if cur_status == 'Present' %}text-success border-success{% elif cur_status == 'Absent' %}text-danger border-danger{% else %}text-warning border-warning{% endif %}">
+                            <option value="Present" {% if cur_status == 'Present' %}selected{% endif %}>✓ Present</option>
+                            <option value="Absent" {% if cur_status == 'Absent' %}selected{% endif %}>❌ Absent</option>
+                            <option value="On Leave" {% if cur_status == 'On Leave' %}selected{% endif %}>⏳ On Leave</option>
+                          </select>
+                        </td>
+                        <td style="width: 130px;">
+                          <input type="text" name="check_in_{{ s_id }}" class="form-control form-control-sm" placeholder="08:00 AM" value="{{ rec.check_in if rec else '08:00 AM' }}">
+                        </td>
+                        <td style="width: 130px;">
+                          <input type="text" name="check_out_{{ s_id }}" class="form-control form-control-sm" placeholder="05:00 PM" value="{{ rec.check_out if rec else '05:00 PM' }}">
+                        </td>
+                        <td>
+                          <input type="text" name="remarks_{{ s_id }}" class="form-control form-control-sm" placeholder="e.g. On time" value="{{ rec.remarks if rec else '' }}">
+                        </td>
+                      </tr>
+                    {% else %}
+                      <tr><td colspan="8" class="text-center text-muted py-4">No active caretakers or working staff found. Please add staff members.</td></tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+
+              {% if all_active %}
+              <div class="text-end mt-3">
+                <button type="submit" class="btn btn-success fw-bold px-4 shadow">
+                  <i class="fa-solid fa-floppy-disk me-1"></i> Save Daily Attendance
+                </button>
+              </div>
+              {% endif %}
+            </form>
+
+          </div>
+        </div>
+
+        <!-- SUBTAB 3: CARETAKERS ROSTER & MANAGEMENT -->
+        <div class="tab-pane fade" id="subtab-caretakers" role="tabpanel">
+          <div class="card card-custom p-4 shadow-sm mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <div>
+                <h5 class="fw-bold mb-1"><i class="fa-solid fa-broom text-warning me-2"></i> Caretaker Staff Directory</h5>
+                <p class="small text-muted mb-0">Manage caretakers assigned to room cleaning, bathroom sanitation, and hostel maintenance.</p>
+              </div>
+              <button type="button" class="btn btn-warning btn-sm text-dark fw-bold" data-bs-toggle="modal" data-bs-target="#addCaretakerModal">
+                <i class="fa-solid fa-plus me-1"></i> + Add Caretaker
+              </button>
+            </div>
+
+            <div class="table-responsive">
+              <table class="table table-hover align-middle">
+                <thead class="table-light">
+                  <tr>
+                    <th>#</th>
+                    <th>Staff ID</th>
+                    <th>Full Name</th>
+                    <th>Phone Number</th>
+                    <th>Assigned Work</th>
+                    <th>Shift</th>
+                    <th>Status</th>
+                    <th class="text-end">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for c in caretakers %}
+                  <tr>
+                    <td>{{ loop.index }}</td>
+                    <td class="fw-bold text-primary">{{ c.staff_id }}</td>
+                    <td class="fw-semibold text-dark">{{ c.full_name }}</td>
+                    <td>{{ c.phone or '—' }}</td>
+                    <td><span class="badge bg-light text-dark border"><i class="fa-solid fa-briefcase me-1 text-warning"></i> {{ c.assigned_work }}</span></td>
+                    <td>{{ c.shift }}</td>
+                    <td><span class="badge {% if c.status == 'Active' %}bg-success{% else %}bg-secondary{% endif %}">{{ c.status }}</span></td>
+                    <td class="text-end">
+                      <button type="button" class="btn btn-sm btn-outline-primary me-1" data-bs-toggle="modal" data-bs-target="#editCaretakerModal{{ c._id }}">
+                        <i class="fa-solid fa-pen-to-square me-1"></i> Edit
+                      </button>
+                      <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteCaretakerModal{{ c._id }}">
+                        <i class="fa-solid fa-trash me-1"></i> Delete
+                      </button>
+                    </td>
+                  </tr>
+                  {% else %}
+                  <tr><td colspan="8" class="text-center text-muted py-4">No caretakers registered yet. Click <strong>+ Add Caretaker</strong>.</td></tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- SUBTAB 4: WORKING STAFF ROSTER & MANAGEMENT -->
+        <div class="tab-pane fade" id="subtab-workingstaff" role="tabpanel">
+          <div class="card card-custom p-4 shadow-sm mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <div>
+                <h5 class="fw-bold mb-1"><i class="fa-solid fa-user-gear text-info me-2"></i> Working Staff Directory</h5>
+                <p class="small text-muted mb-0">Manage kitchen cooks, helpers, security guards, plumbers, and electricians.</p>
+              </div>
+              <button type="button" class="btn btn-primary btn-sm fw-bold" data-bs-toggle="modal" data-bs-target="#addWorkingStaffModal">
+                <i class="fa-solid fa-plus me-1"></i> + Add Working Staff
+              </button>
+            </div>
+
+            <div class="table-responsive">
+              <table class="table table-hover align-middle">
+                <thead class="table-light">
+                  <tr>
+                    <th>#</th>
+                    <th>Staff ID</th>
+                    <th>Full Name</th>
+                    <th>Phone Number</th>
+                    <th>Job Role</th>
+                    <th>Department</th>
+                    <th>Shift</th>
+                    <th>Status</th>
+                    <th class="text-end">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for w in working_staff %}
+                  <tr>
+                    <td>{{ loop.index }}</td>
+                    <td class="fw-bold text-info">{{ w.staff_id }}</td>
+                    <td class="fw-semibold text-dark">{{ w.full_name }}</td>
+                    <td>{{ w.phone or '—' }}</td>
+                    <td><span class="badge bg-light text-dark border"><i class="fa-solid fa-user-tag me-1 text-info"></i> {{ w.job_role }}</span></td>
+                    <td>{{ w.department }}</td>
+                    <td>{{ w.shift }}</td>
+                    <td><span class="badge {% if w.status == 'Active' %}bg-success{% else %}bg-secondary{% endif %}">{{ w.status }}</span></td>
+                    <td class="text-end">
+                      <button type="button" class="btn btn-sm btn-outline-primary me-1" data-bs-toggle="modal" data-bs-target="#editWorkingStaffModal{{ w._id }}">
+                        <i class="fa-solid fa-pen-to-square me-1"></i> Edit
+                      </button>
+                      <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteWorkingStaffModal{{ w._id }}">
+                        <i class="fa-solid fa-trash me-1"></i> Delete
+                      </button>
+                    </td>
+                  </tr>
+                  {% else %}
+                  <tr><td colspan="9" class="text-center text-muted py-4">No working staff registered yet. Click <strong>+ Add Working Staff</strong>.</td></tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+</div>
+
+<!-- ========================================================= -->
+<!-- MODAL CONTAINER (PLACED OUTSIDE TABLES FOR DOM STABILITY) -->
+<!-- ========================================================= -->
+
+<!-- CARETAKER ADD MODAL -->
+<div class="modal fade text-start" id="addCaretakerModal" tabindex="-1">
+  <div class="modal-dialog">
+    <form action="{{ url_for('admin.add_caretaker') }}" method="POST" class="modal-content">
+      <div class="modal-header bg-warning text-dark">
+        <h5 class="modal-title fw-bold"><i class="fa-solid fa-user-plus me-2"></i> Add New Caretaker</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Staff ID <span class="text-danger">*</span></label>
+          <input type="text" name="staff_id" class="form-control text-uppercase" placeholder="e.g. CT104" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Full Name <span class="text-danger">*</span></label>
+          <input type="text" name="full_name" class="form-control" placeholder="Caretaker Full Name" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Phone Number</label>
+          <input type="tel" name="phone" class="form-control" placeholder="+91 9876543210">
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Assigned Work</label>
+          <select name="assigned_work" class="form-select">
+            <option value="Hostel Maintenance">Hostel Maintenance</option>
+            <option value="Room Cleaning">Room Cleaning</option>
+            <option value="Bathroom Cleaning">Bathroom Cleaning</option>
+            <option value="Floor Cleaning">Floor Cleaning</option>
+            <option value="General Maintenance">General Maintenance</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label fw-semibold">Shift</label>
+            <select name="shift" class="form-select">
+              <option value="Morning">Morning</option>
+              <option value="Afternoon">Afternoon</option>
+              <option value="Night">Night</option>
+              <option value="Full Day">Full Day</option>
+            </select>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label fw-semibold">Status</label>
+            <select name="status" class="form-select">
+              <option value="Active">Active</option>
+              <option value="Inactive">Inactive</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" class="btn btn-warning text-dark fw-bold"><i class="fa-solid fa-floppy-disk me-1"></i> Save Caretaker</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- CARETAKER EDIT & DELETE MODALS -->
+{% for c in caretakers %}
+<div class="modal fade text-start" id="editCaretakerModal{{ c._id }}" tabindex="-1">
+  <div class="modal-dialog">
+    <form action="{{ url_for('admin.edit_caretaker', ct_id=c._id) }}" method="POST" class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title fw-bold"><i class="fa-solid fa-pen-to-square me-2"></i> Edit Caretaker Details</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Staff ID</label>
+          <input type="text" name="staff_id" class="form-control text-uppercase" value="{{ c.staff_id }}" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Full Name</label>
+          <input type="text" name="full_name" class="form-control" value="{{ c.full_name }}" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Phone Number</label>
+          <input type="tel" name="phone" class="form-control" value="{{ c.phone or '' }}">
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Assigned Work</label>
+          <select name="assigned_work" class="form-select">
+            <option value="Hostel Maintenance" {% if c.assigned_work == 'Hostel Maintenance' %}selected{% endif %}>Hostel Maintenance</option>
+            <option value="Room Cleaning" {% if c.assigned_work == 'Room Cleaning' %}selected{% endif %}>Room Cleaning</option>
+            <option value="Bathroom Cleaning" {% if c.assigned_work == 'Bathroom Cleaning' %}selected{% endif %}>Bathroom Cleaning</option>
+            <option value="Floor Cleaning" {% if c.assigned_work == 'Floor Cleaning' %}selected{% endif %}>Floor Cleaning</option>
+            <option value="General Maintenance" {% if c.assigned_work == 'General Maintenance' %}selected{% endif %}>General Maintenance</option>
+            <option value="Other" {% if c.assigned_work == 'Other' %}selected{% endif %}>Other</option>
+          </select>
+        </div>
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label fw-semibold">Shift</label>
+            <select name="shift" class="form-select">
+              <option value="Morning" {% if c.shift == 'Morning' %}selected{% endif %}>Morning</option>
+              <option value="Afternoon" {% if c.shift == 'Afternoon' %}selected{% endif %}>Afternoon</option>
+              <option value="Night" {% if c.shift == 'Night' %}selected{% endif %}>Night</option>
+              <option value="Full Day" {% if c.shift == 'Full Day' %}selected{% endif %}>Full Day</option>
+            </select>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label fw-semibold">Status</label>
+            <select name="status" class="form-select">
+              <option value="Active" {% if c.status == 'Active' %}selected{% endif %}>Active</option>
+              <option value="Inactive" {% if c.status == 'Inactive' %}selected{% endif %}>Inactive</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" class="btn btn-primary fw-semibold"><i class="fa-solid fa-floppy-disk me-1"></i> Save Changes</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="modal fade text-start" id="deleteCaretakerModal{{ c._id }}" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title fw-bold"><i class="fa-solid fa-triangle-exclamation me-2"></i> Confirm Caretaker Delete</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        Delete caretaker record for <strong>{{ c.full_name }}</strong> (Staff ID: {{ c.staff_id }})?
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <form action="{{ url_for('admin.delete_caretaker', ct_id=c._id) }}" method="POST">
+          <button type="submit" class="btn btn-danger fw-semibold"><i class="fa-solid fa-trash me-1"></i> Confirm Delete</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+
+<!-- WORKING STAFF ADD MODAL -->
+<div class="modal fade text-start" id="addWorkingStaffModal" tabindex="-1">
+  <div class="modal-dialog">
+    <form action="{{ url_for('admin.add_working_staff') }}" method="POST" class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title fw-bold"><i class="fa-solid fa-user-plus me-2"></i> Add Working Staff</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Staff ID <span class="text-danger">*</span></label>
+          <input type="text" name="staff_id" class="form-control text-uppercase" placeholder="e.g. WS205" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Full Name <span class="text-danger">*</span></label>
+          <input type="text" name="full_name" class="form-control" placeholder="Staff Full Name" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Phone Number</label>
+          <input type="tel" name="phone" class="form-control" placeholder="+91 9876543210">
+        </div>
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label fw-semibold">Job Role</label>
+            <select name="job_role" class="form-select">
+              <option value="Cook">Cook</option>
+              <option value="Assistant Cook">Assistant Cook</option>
+              <option value="Kitchen Helper">Kitchen Helper</option>
+              <option value="Cleaning Staff">Cleaning Staff</option>
+              <option value="Security Guard">Security Guard</option>
+              <option value="Electrician">Electrician</option>
+              <option value="Plumber">Plumber</option>
+              <option value="Maintenance Staff">Maintenance Staff</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label fw-semibold">Department</label>
+            <input type="text" name="department" class="form-control" placeholder="Mess Kitchen / Security">
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label fw-semibold">Shift</label>
+            <select name="shift" class="form-select">
+              <option value="Morning">Morning</option>
+              <option value="Afternoon">Afternoon</option>
+              <option value="Night">Night</option>
+              <option value="Full Day">Full Day</option>
+            </select>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label fw-semibold">Status</label>
+            <select name="status" class="form-select">
+              <option value="Active">Active</option>
+              <option value="Inactive">Inactive</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" class="btn btn-primary fw-bold"><i class="fa-solid fa-floppy-disk me-1"></i> Save Working Staff</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- WORKING STAFF EDIT & DELETE MODALS -->
+{% for w in working_staff %}
+<div class="modal fade text-start" id="editWorkingStaffModal{{ w._id }}" tabindex="-1">
+  <div class="modal-dialog">
+    <form action="{{ url_for('admin.edit_working_staff', ws_id=w._id) }}" method="POST" class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title fw-bold"><i class="fa-solid fa-pen-to-square me-2"></i> Edit Working Staff Details</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Staff ID</label>
+          <input type="text" name="staff_id" class="form-control text-uppercase" value="{{ w.staff_id }}" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Full Name</label>
+          <input type="text" name="full_name" class="form-control" value="{{ w.full_name }}" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Phone Number</label>
+          <input type="tel" name="phone" class="form-control" value="{{ w.phone or '' }}">
+        </div>
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label fw-semibold">Job Role</label>
+            <select name="job_role" class="form-select">
+              <option value="Cook" {% if w.job_role == 'Cook' %}selected{% endif %}>Cook</option>
+              <option value="Assistant Cook" {% if w.job_role == 'Assistant Cook' %}selected{% endif %}>Assistant Cook</option>
+              <option value="Kitchen Helper" {% if w.job_role == 'Kitchen Helper' %}selected{% endif %}>Kitchen Helper</option>
+              <option value="Cleaning Staff" {% if w.job_role == 'Cleaning Staff' %}selected{% endif %}>Cleaning Staff</option>
+              <option value="Security Guard" {% if w.job_role == 'Security Guard' %}selected{% endif %}>Security Guard</option>
+              <option value="Electrician" {% if w.job_role == 'Electrician' %}selected{% endif %}>Electrician</option>
+              <option value="Plumber" {% if w.job_role == 'Plumber' %}selected{% endif %}>Plumber</option>
+              <option value="Maintenance Staff" {% if w.job_role == 'Maintenance Staff' %}selected{% endif %}>Maintenance Staff</option>
+              <option value="Other" {% if w.job_role == 'Other' %}selected{% endif %}>Other</option>
+            </select>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label fw-semibold">Department</label>
+            <input type="text" name="department" class="form-control" value="{{ w.department or '' }}">
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label fw-semibold">Shift</label>
+            <select name="shift" class="form-select">
+              <option value="Morning" {% if w.shift == 'Morning' %}selected{% endif %}>Morning</option>
+              <option value="Afternoon" {% if w.shift == 'Afternoon' %}selected{% endif %}>Afternoon</option>
+              <option value="Night" {% if w.shift == 'Night' %}selected{% endif %}>Night</option>
+              <option value="Full Day" {% if w.shift == 'Full Day' %}selected{% endif %}>Full Day</option>
+            </select>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label fw-semibold">Status</label>
+            <select name="status" class="form-select">
+              <option value="Active" {% if w.status == 'Active' %}selected{% endif %}>Active</option>
+              <option value="Inactive" {% if w.status == 'Inactive' %}selected{% endif %}>Inactive</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" class="btn btn-primary fw-semibold"><i class="fa-solid fa-floppy-disk me-1"></i> Save Changes</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="modal fade text-start" id="deleteWorkingStaffModal{{ w._id }}" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title fw-bold"><i class="fa-solid fa-triangle-exclamation me-2"></i> Confirm Staff Delete</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        Delete working staff record for <strong>{{ w.full_name }}</strong> (Staff ID: {{ w.staff_id }})?
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <form action="{{ url_for('admin.delete_working_staff', ws_id=w._id) }}" method="POST">
+          <button type="submit" class="btn btn-danger fw-semibold"><i class="fa-solid fa-trash me-1"></i> Confirm Delete</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+
+<!-- SINGLE ATTENDANCE RECORD EDIT MODALS -->
+{% for r in daily_attendance_records %}
+<div class="modal fade text-start" id="editAttModal{{ r._id }}" tabindex="-1">
+  <div class="modal-dialog">
+    <form action="{{ url_for('admin.edit_single_staff_attendance', att_id=r._id) }}" method="POST" class="modal-content">
+      <input type="hidden" name="date" value="{{ selected_date }}">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title fw-bold"><i class="fa-solid fa-pen-to-square me-2"></i> Edit Attendance: {{ r.full_name }}</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Attendance Status</label>
+          <select name="status" class="form-select fw-bold">
+            <option value="Present" {% if r.attendance_status == 'Present' %}selected{% endif %}>Present</option>
+            <option value="Absent" {% if r.attendance_status == 'Absent' %}selected{% endif %}>Absent</option>
+            <option value="On Leave" {% if r.attendance_status == 'On Leave' %}selected{% endif %}>On Leave</option>
+          </select>
+        </div>
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label fw-semibold">Check-In Time</label>
+            <input type="text" name="check_in" class="form-control" value="{{ r.check_in or '' }}" placeholder="08:00 AM">
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label fw-semibold">Check-Out Time</label>
+            <input type="text" name="check_out" class="form-control" value="{{ r.check_out or '' }}" placeholder="05:00 PM">
+          </div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Remarks / Notes</label>
+          <input type="text" name="remarks" class="form-control" value="{{ r.remarks or '' }}" placeholder="e.g. Approved leave / late entry">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" class="btn btn-primary fw-semibold"><i class="fa-solid fa-floppy-disk me-1"></i> Save Changes</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endfor %}
+
+<!-- MESS ITEM EDIT & DELETE MODALS -->
+{% for m in mess_items %}
+<div class="modal fade text-start" id="editMessModal{{ m._id }}" tabindex="-1">
+  <div class="modal-dialog">
+    <form action="{{ url_for('admin.edit_mess_item', item_id=m._id) }}" method="POST" class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title fw-bold"><i class="fa-solid fa-pen-to-square me-2"></i> Edit Food Entry ({{ m.day }} {{ m.meal_type|title }})</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label fw-semibold">Day</label>
+            <select name="day" class="form-select" required>
+              {% for day_option in ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] %}
+                <option value="{{ day_option }}" {% if m.day == day_option %}selected{% endif %}>{{ day_option }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label fw-semibold">Meal Type</label>
+            <select name="meal_type" class="form-select" required>
+              <option value="breakfast" {% if m.meal_type == 'breakfast' %}selected{% endif %}>Breakfast</option>
+              <option value="lunch" {% if m.meal_type == 'lunch' %}selected{% endif %}>Lunch</option>
+              <option value="snacks" {% if m.meal_type == 'snacks' %}selected{% endif %}>Evening Snacks</option>
+              <option value="dinner" {% if m.meal_type == 'dinner' %}selected{% endif %}>Dinner</option>
+            </select>
+          </div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Time Slot (e.g. 8:00 AM)</label>
+          <input type="text" name="time" class="form-control" value="{{ m.time or '' }}" placeholder="e.g. 8:00 AM - 9:00 AM">
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Food / Menu Items <span class="text-danger">*</span></label>
+          <textarea name="menu_items" class="form-control" rows="3" required>{{ m.menu_items }}</textarea>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Special Note / Rule (Optional)</label>
+          <input type="text" name="special_note" class="form-control" value="{{ m.special_note or '' }}" placeholder="e.g. Egg vs Veg Choice Day">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" class="btn btn-primary fw-semibold"><i class="fa-solid fa-floppy-disk me-1"></i> Save Changes</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="modal fade text-start" id="deleteMessModal{{ m._id }}" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title fw-bold"><i class="fa-solid fa-triangle-exclamation me-2"></i> Confirm Deletion</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        Delete entry for <strong>{{ m.day }} {{ m.meal_type|title }}</strong> ({{ m.menu_items }})?
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <form action="{{ url_for('admin.delete_mess_item', item_id=m._id) }}" method="POST">
+          <button type="submit" class="btn btn-danger fw-semibold"><i class="fa-solid fa-trash me-1"></i> Confirm Delete</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+
+<!-- APPROVED STUDENT EDIT & DELETE MODALS -->
+{% for s in approved_students %}
+<div class="modal fade text-start" id="editApprovedStudentModal{{ s._id }}" tabindex="-1">
+  <div class="modal-dialog">
+    <form action="{{ url_for('admin.edit_approved_student', student_id=s._id) }}" method="POST" class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title fw-bold"><i class="fa-solid fa-pen-to-square me-2"></i> Edit Approved Student</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Roll Number</label>
+          <input type="text" name="roll_number" class="form-control" value="{{ s.roll_number }}" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Full Name</label>
+          <input type="text" name="full_name" class="form-control" value="{{ s.full_name }}" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Email</label>
+          <input type="email" name="email" class="form-control" value="{{ s.email }}" required>
+        </div>
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label fw-semibold">Department</label>
+            <select name="department" class="form-select">
+              <option value="CSE" {% if s.department == 'CSE' %}selected{% endif %}>CSE</option>
+              <option value="ECE" {% if s.department == 'ECE' %}selected{% endif %}>ECE</option>
+              <option value="IT" {% if s.department == 'IT' %}selected{% endif %}>IT</option>
+              <option value="EEE" {% if s.department == 'EEE' %}selected{% endif %}>EEE</option>
+              <option value="MECH" {% if s.department == 'MECH' %}selected{% endif %}>MECH</option>
+              <option value="CIVIL" {% if s.department == 'CIVIL' %}selected{% endif %}>CIVIL</option>
+            </select>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label fw-semibold">Semester Mapping</label>
+            <select name="semester" class="form-select">
+              {% for sem_num in range(1, 9) %}
+                <option value="{{ sem_num }}" {% if s.semester|string == sem_num|string %}selected{% endif %}>Semester {{ sem_num }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label fw-semibold">Phone</label>
+            <input type="text" name="phone" class="form-control" value="{{ s.phone or '' }}">
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label fw-semibold">Room Number</label>
+            <input type="text" name="room_number" class="form-control" value="{{ s.room_number or '101' }}">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" class="btn btn-primary fw-semibold"><i class="fa-solid fa-floppy-disk me-1"></i> Save Changes</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="modal fade text-start" id="deleteApprovedStudentModal{{ s._id }}" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title fw-bold"><i class="fa-solid fa-triangle-exclamation me-2"></i> Confirm Deletion</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p class="mb-1">Are you sure you want to delete <strong>{{ s.full_name }}</strong> ({{ s.roll_number }})?</p>
+        <small class="text-danger">This will revoke registration permission and remove active login access.</small>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <form action="{{ url_for('admin.delete_approved_student', student_id=s._id) }}" method="POST">
+          <button type="submit" class="btn btn-danger fw-semibold"><i class="fa-solid fa-trash me-1"></i> Confirm Delete</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+
+<!-- ANNOUNCEMENT EDIT & DELETE MODALS -->
+{% for a in announcements %}
+<div class="modal fade text-start" id="editAncModal{{ a._id }}" tabindex="-1">
+  <div class="modal-dialog">
+    <form action="{{ url_for('admin.edit_announcement', anc_id=a._id) }}" method="POST" class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title fw-bold">Edit Announcement</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Title</label>
+          <input type="text" name="title" class="form-control" value="{{ a.title }}" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Priority</label>
+          <select name="priority" class="form-select">
+            <option value="Low" {% if a.priority == 'Low' %}selected{% endif %}>Low</option>
+            <option value="Medium" {% if a.priority == 'Medium' %}selected{% endif %}>Medium</option>
+            <option value="High" {% if a.priority == 'High' %}selected{% endif %}>High</option>
+          </select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Content</label>
+          <textarea name="content" class="form-control" rows="4" required>{{ a.content }}</textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" class="btn btn-primary fw-semibold"><i class="fa-solid fa-floppy-disk me-1"></i> Save Changes</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="modal fade text-start" id="deleteAncModal{{ a._id }}" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title fw-bold">Confirm Announcement Delete</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        Delete announcement <strong>{{ a.title }}</strong>?
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <form action="{{ url_for('admin.delete_announcement', anc_id=a._id) }}" method="POST">
+          <button type="submit" class="btn btn-danger fw-semibold"><i class="fa-solid fa-trash me-1"></i> Confirm Delete</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+
+<!-- GLOBAL ADD MODALS -->
+<div class="modal fade text-start" id="addMessItemModal" tabindex="-1">
+  <div class="modal-dialog">
+    <form action="{{ url_for('admin.add_mess_item') }}" method="POST" class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title fw-bold"><i class="fa-solid fa-utensils me-2"></i> Add Food Timetable Entry</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label fw-semibold">Day <span class="text-danger">*</span></label>
+            <select name="day" class="form-select" required>
+              <option value="Monday">Monday</option>
+              <option value="Tuesday">Tuesday</option>
+              <option value="Wednesday">Wednesday</option>
+              <option value="Thursday">Thursday</option>
+              <option value="Friday">Friday</option>
+              <option value="Saturday">Saturday</option>
+              <option value="Sunday">Sunday</option>
+            </select>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label fw-semibold">Meal Type <span class="text-danger">*</span></label>
+            <select name="meal_type" class="form-select" required>
+              <option value="breakfast">Breakfast</option>
+              <option value="lunch">Lunch</option>
+              <option value="snacks">Evening Snacks</option>
+              <option value="dinner">Dinner</option>
+            </select>
+          </div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Time Slot (e.g. 7:30 AM - 8:45 AM)</label>
+          <input type="text" name="time" class="form-control" placeholder="e.g. 8:00 AM - 9:00 AM">
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Food / Menu Items <span class="text-danger">*</span></label>
+          <textarea name="menu_items" class="form-control" rows="3" placeholder="e.g. Idli + Sambar, Coconut Chutney, Tea/Coffee" required></textarea>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Special Note / Rule (Optional)</label>
+          <input type="text" name="special_note" class="form-control" placeholder="e.g. Egg vs Veg Selection Day">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" class="btn btn-primary fw-semibold"><i class="fa-solid fa-plus me-1"></i> Add Food Entry</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="modal fade text-start" id="addApprovedStudentModal" tabindex="-1">
+  <div class="modal-dialog">
+    <form action="{{ url_for('admin.add_approved_student') }}" method="POST" class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title fw-bold"><i class="fa-solid fa-user-plus me-2"></i> Add Approved Student</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Roll Number / Student ID <span class="text-danger">*</span></label>
+          <input type="text" name="roll_number" class="form-control" placeholder="e.g. 23A91A0001" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Student Full Name <span class="text-danger">*</span></label>
+          <input type="text" name="full_name" class="form-control" placeholder="e.g. Student Name" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Email Address</label>
+          <input type="email" name="email" class="form-control" placeholder="e.g. student@srivasaviengg.ac.in">
+        </div>
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label fw-semibold">Department / Branch</label>
+            <select name="department" class="form-select">
+              <option value="CSE">CSE</option>
+              <option value="ECE">ECE</option>
+              <option value="IT">IT</option>
+              <option value="EEE">EEE</option>
+              <option value="MECH">MECH</option>
+              <option value="CIVIL">CIVIL</option>
+            </select>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label fw-semibold">Semester Mapping</label>
+            <select name="semester" class="form-select">
+              {% for sem_num in range(1, 9) %}
+                <option value="{{ sem_num }}" {% if sem_num == 5 %}selected{% endif %}>Semester {{ sem_num }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label fw-semibold">Phone</label>
+            <input type="text" name="phone" class="form-control" placeholder="+91 9876543210">
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label fw-semibold">Room Number</label>
+            <input type="text" name="room_number" class="form-control" placeholder="101">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" class="btn btn-primary fw-semibold"><i class="fa-solid fa-plus me-1"></i> Add Student</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="modal fade text-start" id="importPdfModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title fw-bold"><i class="fa-solid fa-file-pdf me-2"></i> Import Students from PDF</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body p-4">
+        
+        <!-- Step 1: Upload PDF -->
+        <div id="pdfStep1">
+          <div class="border rounded-3 p-4 bg-light text-center mb-3">
+            <i class="fa-solid fa-file-pdf text-danger display-3 mb-3"></i>
+            <h5 class="fw-bold mb-1">Upload Approved Student List (PDF)</h5>
+            <p class="text-muted small mb-3">Upload a PDF containing student roll numbers, names, emails, and branches.</p>
+
+            <div class="mb-3 max-w-md mx-auto" style="max-width: 420px;">
+              <input type="file" id="pdfFileInput" class="form-control form-control-lg" accept=".pdf,application/pdf">
+              <div class="form-text mt-2">Supported format: <strong>PDF only</strong> (.pdf)</div>
+            </div>
+
+            <div id="pdfUploadError" class="alert alert-danger d-none my-2 small text-start"></div>
+
+            <button type="button" id="btnExtractPdf" class="btn btn-danger fw-semibold px-4 py-2 mt-2 shadow-sm">
+              <i class="fa-solid fa-magnifying-glass me-1"></i> Extract Student Details
+            </button>
+          </div>
+        </div>
+
+        <!-- Loading State -->
+        <div id="pdfLoadingState" class="d-none text-center py-5">
+          <div class="spinner-border text-danger mb-3" style="width: 3rem; height: 3rem;" role="status"></div>
+          <h5 class="fw-bold mb-1" id="pdfLoadingTitle">Reading PDF...</h5>
+          <p class="text-muted small mb-0" id="pdfLoadingMsg">Extracting student details and checking for duplicates...</p>
+        </div>
+
+        <!-- Step 2: Preview Extracted Records -->
+        <div id="pdfStep2" class="d-none">
+          <div class="alert alert-info py-2 px-3 mb-3 d-flex flex-wrap align-items-center justify-content-between gap-2 shadow-sm">
+            <div class="fw-bold small text-dark"><i class="fa-solid fa-list-check me-1 text-primary"></i> PDF Student Import Preview</div>
+            <div class="d-flex gap-2 flex-wrap">
+              <span class="badge bg-primary fs-6" id="badgeTotalCount">Total: 0</span>
+              <span class="badge bg-success fs-6" id="badgeValidCount">✓ New: 0</span>
+              <span class="badge bg-warning text-dark fs-6" id="badgeDupCount">⚠ Duplicate: 0</span>
+              <span class="badge bg-danger fs-6" id="badgeInvalidCount">❌ Invalid: 0</span>
+            </div>
+          </div>
+
+          <div class="table-responsive border rounded mb-3" style="max-height: 320px; overflow-y: auto;">
+            <table class="table table-hover table-sm align-middle mb-0">
+              <thead class="table-light sticky-top">
+                <tr>
+                  <th>#</th>
+                  <th>Roll Number</th>
+                  <th>Full Name</th>
+                  <th>Email</th>
+                  <th>Dept</th>
+                  <th>Sem</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="pdfPreviewTbody">
+                <!-- Dynamic Rows -->
+              </tbody>
+            </table>
+          </div>
+
+          <div id="pdfImportError" class="alert alert-danger d-none my-2 small"></div>
+        </div>
+
+      </div>
+      <div class="modal-footer" id="pdfModalFooter">
+        <button type="button" class="btn btn-secondary" data-bs-dismis          <button type="button" id="btnConfirmImport" class="btn btn-success fw-bold d-none">
+          <i class="fa-solid fa-user-plus me-1"></i> Import Valid Students
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========================================================= -->
+<!-- STAFF PDF IMPORT MODAL -->
+<!-- ========================================================= -->
+<div class="modal fade text-start" id="importStaffPdfModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title fw-bold"><i class="fa-solid fa-file-pdf me-2"></i> Import Staff Details from PDF</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body p-4">
+        
+        <!-- Step 1: Upload Staff PDF -->
+        <div id="staffPdfStep1">
+          <div class="border rounded-3 p-4 bg-light text-center mb-3">
+            <i class="fa-solid fa-file-pdf text-danger display-3 mb-3"></i>
+            <h5 class="fw-bold mb-1">Upload Staff Register / Roster (PDF)</h5>
+            <p class="text-muted small mb-3">Upload a PDF containing Caretakers or Working Staff details (Staff ID, Name, Phone, Role, Shift).</p>
+
+            <div class="mb-3 max-w-md mx-auto" style="max-width: 420px;">
+              <input type="file" id="staffPdfFileInput" class="form-control form-control-lg" accept=".pdf,application/pdf">
+              <div class="form-text mt-2">Supported format: <strong>PDF only</strong> (.pdf)</div>
+            </div>
+
+            <div id="staffPdfUploadError" class="alert alert-danger d-none my-2 small text-start"></div>
+
+            <button type="button" id="btnExtractStaffPdf" class="btn btn-danger fw-semibold px-4 py-2 mt-2 shadow-sm">
+              <i class="fa-solid fa-magnifying-glass me-1"></i> Extract Staff Details
+            </button>
+          </div>
+        </div>
+
+        <!-- Loading State -->
+        <div id="staffPdfLoadingState" class="d-none text-center py-5">
+          <div class="spinner-border text-danger mb-3" style="width: 3rem; height: 3rem;" role="status"></div>
+          <h5 class="fw-bold mb-1">Reading Staff PDF...</h5>
+          <p class="text-muted small mb-0">Parsing staff details and verifying unique Staff IDs...</p>
+        </div>
+
+        <!-- Step 2: Preview Extracted Staff -->
+        <div id="staffPdfStep2" class="d-none">
+          <div class="alert alert-info py-2 px-3 mb-3 d-flex flex-wrap align-items-center justify-content-between gap-2 shadow-sm">
+            <div class="fw-bold small text-dark"><i class="fa-solid fa-list-check me-1 text-primary"></i> Staff PDF Import Preview</div>
+            <div class="d-flex gap-2 flex-wrap">
+              <span class="badge bg-primary fs-6" id="staffBadgeTotalCount">Total: 0</span>
+              <span class="badge bg-success fs-6" id="staffBadgeValidCount">✓ New: 0</span>
+              <span class="badge bg-warning text-dark fs-6" id="staffBadgeDupCount">⚠ Duplicate: 0</span>
+              <span class="badge bg-danger fs-6" id="staffBadgeInvalidCount">❌ Invalid: 0</span>
+            </div>
+          </div>
+
+          <div class="table-responsive border rounded mb-3" style="max-height: 320px; overflow-y: auto;">
+            <table class="table table-hover table-sm align-middle mb-0">
+              <thead class="table-light sticky-top">
+                <tr>
+                  <th>#</th>
+                  <th>Staff ID</th>
+                  <th>Full Name</th>
+                  <th>Phone</th>
+                  <th>Role / Work</th>
+                  <th>Shift</th>
+                  <th>Category</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="staffPdfPreviewTbody">
+                <!-- Dynamic Rows -->
+              </tbody>
+            </table>
+          </div>
+
+          <div id="staffPdfImportError" class="alert alert-danger d-none my-2 small"></div>
+        </div>
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" id="btnConfirmStaffImport" class="btn btn-success fw-bold d-none">
+          <i class="fa-solid fa-user-plus me-1"></i> Import Valid Staff Details
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade text-start" id="addAnnouncementModal" tabindex="-1">
+  <div class="modal-dialog">
+    <form action="{{ url_for('admin.add_announcement') }}" method="POST" class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title fw-bold">Publish Announcement</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Title <span class="text-danger">*</span></label>
+          <input type="text" name="title" class="form-control" placeholder="e.g. Mid-Term Examination Schedule" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Priority</label>
+          <select name="priority" class="form-select">
+            <option value="Low">Low</option>
+            <option value="Medium" selected>Medium</option>
+            <option value="High">High</option>
+          </select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Announcement Content <span class="text-danger">*</span></label>
+          <textarea name="content" class="form-control" rows="4" placeholder="Enter notice content for students..." required></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" class="btn btn-primary fw-semibold"><i class="fa-solid fa-paper-plane me-1"></i> Publish Announcement</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // --- Student PDF Import JS ---
+  const pdfFileInput = document.getElementById('pdfFileInput');
+  const btnExtractPdf = document.getElementById('btnExtractPdf');
+  const btnConfirmImport = document.getElementById('btnConfirmImport');
+
+  const pdfStep1 = document.getElementById('pdfStep1');
+  const pdfStep2 = document.getElementById('pdfStep2');
+  const pdfLoadingState = document.getElementById('pdfLoadingState');
+
+  const pdfUploadError = document.getElementById('pdfUploadError');
+  const pdfImportError = document.getElementById('pdfImportError');
+
+  const badgeTotalCount = document.getElementById('badgeTotalCount');
+  const badgeValidCount = document.getElementById('badgeValidCount');
+  const badgeDupCount = document.getElementById('badgeDupCount');
+  const badgeInvalidCount = document.getElementById('badgeInvalidCount');
+  const pdfPreviewTbody = document.getElementById('pdfPreviewTbody');
+
+  const importPdfModalEl = document.getElementById('importPdfModal');
+  let extractedValidStudents = [];
+
+  if (importPdfModalEl) {
+    importPdfModalEl.addEventListener('hidden.bs.modal', function() {
+      if (pdfFileInput) pdfFileInput.value = '';
+      if (pdfUploadError) { pdfUploadError.classList.add('d-none'); pdfUploadError.textContent = ''; }
+      if (pdfImportError) { pdfImportError.classList.add('d-none'); pdfImportError.textContent = ''; }
+      pdfStep1.classList.remove('d-none');
+      pdfStep2.classList.add('d-none');
+      pdfLoadingState.classList.add('d-none');
+      btnConfirmImport.classList.add('d-none');
+      btnConfirmImport.disabled = false;
+      extractedValidStudents = [];
+    });
+  }
+
+  if (btnExtractPdf) {
+    btnExtractPdf.addEventListener('click', function() {
+      pdfUploadError.classList.add('d-none');
+      pdfUploadError.textContent = '';
+
+      const file = pdfFileInput.files[0];
+      if (!file) {
+        pdfUploadError.textContent = 'Please select a PDF file.';
+        pdfUploadError.classList.remove('d-none');
+        return;
+      }
+
+      if (!file.name.toLowerCase().endsWith('.pdf')) {
+        pdfUploadError.textContent = 'Please upload a valid PDF file. Only PDF files are supported.';
+        pdfUploadError.classList.remove('d-none');
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('pdf_file', file);
+
+      pdfStep1.classList.add('d-none');
+      pdfLoadingState.classList.remove('d-none');
+
+      fetch('/admin/approved-students/preview-pdf', {
+        method: 'POST',
+        body: formData
+      })
+      .then(res => res.json().then(data => ({ status: res.status, body: data })))
+      .then(resObj => {
+        pdfLoadingState.classList.add('d-none');
+
+        if (!resObj.body.success) {
+          pdfStep1.classList.remove('d-none');
+          pdfUploadError.textContent = resObj.body.error || 'Failed to extract PDF data.';
+          pdfUploadError.classList.remove('d-none');
+          return;
+        }
+
+        const data = resObj.body;
+        badgeTotalCount.textContent = `Total: ${data.total_count}`;
+        badgeValidCount.textContent = `✓ New: ${data.valid_count}`;
+        badgeDupCount.textContent = `⚠ Duplicate: ${data.duplicate_count}`;
+        badgeInvalidCount.textContent = `❌ Invalid: ${data.invalid_count}`;
+
+        pdfPreviewTbody.innerHTML = '';
+        extractedValidStudents = [];
+
+        data.records.forEach((rec, idx) => {
+          if (rec.status === 'valid') extractedValidStudents.push(rec);
+
+          const tr = document.createElement('tr');
+          let statusBadge = '';
+          if (rec.status === 'valid') {
+            statusBadge = '<span class="badge bg-success"><i class="fa-solid fa-check me-1"></i> Valid New</span>';
+          } else if (rec.status === 'duplicate') {
+            statusBadge = '<span class="badge bg-warning text-dark"><i class="fa-solid fa-triangle-exclamation me-1"></i> Already Exists</span>';
+          } else {
+            statusBadge = '<span class="badge bg-danger"><i class="fa-solid fa-xmark me-1"></i> Invalid</span>';
+          }
+
+          tr.innerHTML = `
+            <td>${idx + 1}</td>
+            <td class="fw-bold text-primary">${rec.roll_number || '—'}</td>
+            <td class="fw-semibold">${rec.full_name || '—'}</td>
+            <td class="small text-muted">${rec.email || '—'}</td>
+            <td><span class="badge bg-secondary">${rec.department || 'CSE'}</span></td>
+            <td><span class="badge bg-info text-dark">Sem ${rec.semester || '5'}</span></td>
+            <td>${statusBadge}</td>
+          `;
+          pdfPreviewTbody.appendChild(tr);
+        });
+
+        pdfStep2.classList.remove('d-none');
+        if (data.valid_count > 0) {
+          btnConfirmImport.classList.remove('d-none');
+          btnConfirmImport.textContent = `Import ${data.valid_count} Valid Student${data.valid_count > 1 ? 's' : ''}`;
+        } else {
+          btnConfirmImport.classList.add('d-none');
+        }
+      })
+      .catch(err => {
+        pdfLoadingState.classList.add('d-none');
+        pdfStep1.classList.remove('d-none');
+        pdfUploadError.textContent = 'Unable to process this PDF. Please check the file and try again.';
+        pdfUploadError.classList.remove('d-none');
+      });
+    });
+  }
+
+  if (btnConfirmImport) {
+    btnConfirmImport.addEventListener('click', function() {
+      if (!extractedValidStudents || extractedValidStudents.length === 0) return;
+
+      btnConfirmImport.disabled = true;
+      btnConfirmImport.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Saving to database...';
+
+      fetch('/admin/approved-students/confirm-import-pdf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ students: extractedValidStudents })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          window.location.reload();
+        } else {
+          pdfImportError.textContent = data.error || 'Failed to import students.';
+          pdfImportError.classList.remove('d-none');
+          btnConfirmImport.disabled = false;
+          btnConfirmImport.innerHTML = '<i class="fa-solid fa-user-plus me-1"></i> Import Valid Students';
+        }
+      })
+      .catch(err => {
+        pdfImportError.textContent = 'Error saving students to database.';
+        pdfImportError.classList.remove('d-none');
+        btnConfirmImport.disabled = false;
+        btnConfirmImport.innerHTML = '<i class="fa-solid fa-user-plus me-1"></i> Import Valid Students';
+      });
+    });
+  }
+
+  // --- Staff PDF Import JS ---
+  const staffPdfFileInput = document.getElementById('staffPdfFileInput');
+  const btnExtractStaffPdf = document.getElementById('btnExtractStaffPdf');
+  const btnConfirmStaffImport = document.getElementById('btnConfirmStaffImport');
+
+  const staffPdfStep1 = document.getElementById('staffPdfStep1');
+  const staffPdfStep2 = document.getElementById('staffPdfStep2');
+  const staffPdfLoadingState = document.getElementById('staffPdfLoadingState');
+
+  const staffPdfUploadError = document.getElementById('staffPdfUploadError');
+  const staffPdfImportError = document.getElementById('staffPdfImportError');
+
+  const staffBadgeTotalCount = document.getElementById('staffBadgeTotalCount');
+  const staffBadgeValidCount = document.getElementById('staffBadgeValidCount');
+  const staffBadgeDupCount = document.getElementById('staffBadgeDupCount');
+  const staffBadgeInvalidCount = document.getElementById('staffBadgeInvalidCount');
+  const staffPdfPreviewTbody = document.getElementById('staffPdfPreviewTbody');
+
+  const importStaffPdfModalEl = document.getElementById('importStaffPdfModal');
+  let extractedValidStaff = [];
+
+  if (importStaffPdfModalEl) {
+    importStaffPdfModalEl.addEventListener('hidden.bs.modal', function() {
+      if (staffPdfFileInput) staffPdfFileInput.value = '';
+      if (staffPdfUploadError) { staffPdfUploadError.classList.add('d-none'); staffPdfUploadError.textContent = ''; }
+      if (staffPdfImportError) { staffPdfImportError.classList.add('d-none'); staffPdfImportError.textContent = ''; }
+      staffPdfStep1.classList.remove('d-none');
+      staffPdfStep2.classList.add('d-none');
+      staffPdfLoadingState.classList.add('d-none');
+      btnConfirmStaffImport.classList.add('d-none');
+      btnConfirmStaffImport.disabled = false;
+      extractedValidStaff = [];
+    });
+  }
+
+  if (btnExtractStaffPdf) {
+    btnExtractStaffPdf.addEventListener('click', function() {
+      staffPdfUploadError.classList.add('d-none');
+      staffPdfUploadError.textContent = '';
+
+      const file = staffPdfFileInput.files[0];
+      if (!file) {
+        staffPdfUploadError.textContent = 'Please select a PDF file.';
+        staffPdfUploadError.classList.remove('d-none');
+        return;
+      }
+
+      if (!file.name.toLowerCase().endsWith('.pdf')) {
+        staffPdfUploadError.textContent = 'Please upload a valid PDF file. Only PDF files are supported.';
+        staffPdfUploadError.classList.remove('d-none');
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('pdf_file', file);
+
+      staffPdfStep1.classList.add('d-none');
+      staffPdfLoadingState.classList.remove('d-none');
+
+      fetch('/admin/staff/preview-pdf', {
+        method: 'POST',
+        body: formData
+      })
+      .then(res => res.json().then(data => ({ status: res.status, body: data })))
+      .then(resObj => {
+        staffPdfLoadingState.classList.add('d-none');
+
+        if (!resObj.body.success) {
+          staffPdfStep1.classList.remove('d-none');
+          staffPdfUploadError.textContent = resObj.body.error || 'Failed to extract staff details from PDF.';
+          staffPdfUploadError.classList.remove('d-none');
+          return;
+        }
+
+        const data = resObj.body;
+        staffBadgeTotalCount.textContent = `Total: ${data.total_count}`;
+        staffBadgeValidCount.textContent = `✓ New: ${data.valid_count}`;
+        staffBadgeDupCount.textContent = `⚠ Duplicate: ${data.duplicate_count}`;
+        staffBadgeInvalidCount.textContent = `❌ Invalid: ${data.invalid_count}`;
+
+        staffPdfPreviewTbody.innerHTML = '';
+        extractedValidStaff = [];
+
+        data.records.forEach((rec, idx) => {
+          const tr = document.createElement('tr');
+          tr.className = 'staff-preview-row';
+          let statusBadge = '';
+          if (rec.status === 'valid') {
+            statusBadge = '<span class="badge bg-success"><i class="fa-solid fa-check me-1"></i> New</span>';
+          } else if (rec.status === 'duplicate') {
+            statusBadge = '<span class="badge bg-warning text-dark"><i class="fa-solid fa-triangle-exclamation me-1"></i> Duplicate</span>';
+          } else {
+            statusBadge = '<span class="badge bg-danger"><i class="fa-solid fa-xmark me-1"></i> Invalid</span>';
+          }
+
+          const isChecked = rec.status === 'valid' ? 'checked' : '';
+
+          tr.innerHTML = `
+            <td class="text-center">
+              <input type="checkbox" class="form-check-input staff-import-chk" ${isChecked}>
+            </td>
+            <td>
+              <input type="text" class="form-control form-control-sm fw-bold text-primary staff-id-input" value="${rec.staff_id || ''}" style="width: 100px;">
+            </td>
+            <td>
+              <input type="text" class="form-control form-control-sm fw-semibold staff-name-input" value="${rec.full_name || ''}" style="min-width: 160px;" placeholder="Staff Name">
+            </td>
+            <td>
+              <input type="text" class="form-control form-control-sm staff-phone-input" value="${rec.phone || ''}" style="width: 130px;" placeholder="Phone">
+            </td>
+            <td>
+              <input type="text" class="form-control form-control-sm staff-role-input" value="${rec.job_role || 'Staff'}" style="width: 130px;">
+            </td>
+            <td>
+              <select class="form-select form-select-sm staff-shift-select" style="width: 100px;">
+                <option value="Morning" ${rec.shift === 'Morning' ? 'selected' : ''}>Morning</option>
+                <option value="Evening" ${rec.shift === 'Evening' ? 'selected' : ''}>Evening</option>
+                <option value="Night" ${rec.shift === 'Night' ? 'selected' : ''}>Night</option>
+              </select>
+            </td>
+            <td>
+              <select class="form-select form-select-sm staff-cat-select" style="width: 130px;">
+                <option value="Caretaker" ${rec.category === 'Caretaker' ? 'selected' : ''}>Caretaker</option>
+                <option value="Working Staff" ${rec.category !== 'Caretaker' ? 'selected' : ''}>Working Staff</option>
+              </select>
+            </td>
+            <td>${statusBadge}</td>
+          `;
+          staffPdfPreviewTbody.appendChild(tr);
+        });
+
+        staffPdfStep2.classList.remove('d-none');
+        btnConfirmStaffImport.classList.remove('d-none');
+        btnConfirmStaffImport.textContent = `Import Selected Staff Details`;
+      })
+      .catch(err => {
+        staffPdfLoadingState.classList.add('d-none');
+        staffPdfStep1.classList.remove('d-none');
+        staffPdfUploadError.textContent = 'Unable to process this PDF. Please check the file and try again.';
+        staffPdfUploadError.classList.remove('d-none');
+      });
+    });
+  }
+
+  if (btnConfirmStaffImport) {
+    btnConfirmStaffImport.addEventListener('click', function() {
+      const rows = document.querySelectorAll('#staffPdfPreviewTbody tr.staff-preview-row');
+      const staffToImport = [];
+
+      rows.forEach(row => {
+        const chk = row.querySelector('.staff-import-chk');
+        if (chk && chk.checked) {
+          const sId = row.querySelector('.staff-id-input').value.trim();
+          const sName = row.querySelector('.staff-name-input').value.trim();
+          const sPhone = row.querySelector('.staff-phone-input').value.trim();
+          const sRole = row.querySelector('.staff-role-input').value.trim();
+          const sShift = row.querySelector('.staff-shift-select').value;
+          const sCat = row.querySelector('.staff-cat-select').value;
+
+          if (sId && sName) {
+            staffToImport.push({
+              staff_id: sId,
+              full_name: sName,
+              phone: sPhone || '+91 98480 00000',
+              job_role: sRole || 'Staff',
+              department: 'Hostel Operations',
+              shift: sShift,
+              category: sCat
+            });
+          }
+        }
+      });
+
+      if (staffToImport.length === 0) {
+        staffPdfImportError.textContent = 'Please select at least one valid staff record to import.';
+        staffPdfImportError.classList.remove('d-none');
+        return;
+      }
+
+      btnConfirmStaffImport.disabled = true;
+      btnConfirmStaffImport.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Saving staff to database...';
+
+      fetch('/admin/staff/confirm-import-pdf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ staff: staffToImport })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          window.location.reload();
+        } else {
+          staffPdfImportError.textContent = data.error || 'Failed to import staff.';
+          staffPdfImportError.classList.remove('d-none');
+          btnConfirmStaffImport.disabled = false;
+          btnConfirmStaffImport.innerHTML = '<i class="fa-solid fa-user-plus me-1"></i> Import Selected Staff Details';
+        }
+      })
+      .catch(err => {
+        staffPdfImportError.textContent = 'Error saving staff to database.';
+        staffPdfImportError.classList.remove('d-none');
+        btnConfirmStaffImport.disabled = false;
+        btnConfirmStaffImport.innerHTML = '<i class="fa-solid fa-user-plus me-1"></i> Import Selected Staff Details';
+      });
+    });
+  }
+});
+
+function filterApprovedStudentsTable() {
+  const query = (document.getElementById('stuSearchInput').value || '').toLowerCase().trim();
+  const dept = document.getElementById('stuDeptFilter').value;
+  const sem = document.getElementById('stuSemFilter').value;
+  const status = document.getElementById('stuStatusFilter').value;
+
+  const rows = document.querySelectorAll('#approvedStudentsTable .stu-row');
+  rows.forEach(row => {
+    const roll = (row.getAttribute('data-roll') || '').toLowerCase();
+    const name = (row.getAttribute('data-name') || '').toLowerCase();
+    const email = (row.getAttribute('data-email') || '').toLowerCase();
+    const rDept = row.getAttribute('data-dept') || '';
+    const rSem = row.getAttribute('data-sem') || '';
+    const rStatus = row.getAttribute('data-status') || '';
+
+    const matchesSearch = !query || roll.includes(query) || name.includes(query) || email.includes(query);
+    const matchesDept = !dept || rDept === dept;
+    const matchesSem = !sem || rSem === sem;
+    const matchesStatus = !status || rStatus === status;
+
+    if (matchesSearch && matchesDept && matchesSem && matchesStatus) {
+      row.style.display = '';
+    } else {
+      row.style.display = 'none';
+    }
+  });
+}
+</script>
+{% endblock %}
+{% endblock %}

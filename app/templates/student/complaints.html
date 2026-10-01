@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+
+{% block title %}Complaints & Feedback - Student Portal{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h2 class="fw-bold text-primary mb-1"><i class="fa-solid fa-headset me-2"></i> Complaint & Feedback Portal</h2>
+      <p class="text-muted mb-0">Submit grievances directly to the Resident Warden & Administration.</p>
+    </div>
+    <button class="btn btn-primary fw-bold shadow" data-bs-toggle="modal" data-bs-target="#newComplaintModal">
+      <i class="fa-solid fa-plus me-1"></i> File New Complaint
+    </button>
+  </div>
+
+  <!-- Complaint List -->
+  <div class="card card-custom p-4 border-0 shadow-sm">
+    <h4 class="fw-bold text-dark mb-3">My Submitted Complaints</h4>
+    {% if complaints %}
+      <div class="table-responsive">
+        <table class="table table-hover align-middle">
+          <thead class="table-light">
+            <tr>
+              <th>ID & Date</th>
+              <th>Category</th>
+              <th>Subject & Description</th>
+              <th>Priority</th>
+              <th>Status</th>
+              <th>Rectification & Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for c in complaints %}
+              <tr>
+                <td>
+                  <strong class="text-primary font-monospace small">#{{ str(c._id)[-6:].upper() }}</strong>
+                  <div class="small text-muted" style="font-size:0.75rem;">{{ c.created_at.strftime('%Y-%m-%d %H:%M') if c.created_at else '-' }}</div>
+                </td>
+                <td><span class="badge bg-primary">{{ c.category }}</span></td>
+                <td>
+                  <strong class="text-dark d-block">{{ c.subject }}</strong>
+                  <p class="small text-muted mb-1">{{ c.description }}</p>
+                  
+                  {% if c.staff_reply %}
+                    <div class="small text-info mt-1"><i class="fa-solid fa-reply me-1"></i> <strong>Warden Note:</strong> {{ c.staff_reply }}</div>
+                  {% endif %}
+                </td>
+                <td>
+                  <span class="badge {% if c.priority == 'Urgent' %}bg-danger{% elif c.priority == 'High' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                    {{ c.priority }}
+                  </span>
+                </td>
+                <td>
+                  {% if c.status == 'Rectified' %}
+                    <span class="badge bg-success p-2"><i class="fa-solid fa-check-circle me-1"></i> Rectified</span>
+                  {% elif c.status == 'Reopened' %}
+                    <span class="badge bg-danger p-2"><i class="fa-solid fa-rotate-right me-1"></i> Reopened</span>
+                  {% elif c.status == 'Closed' %}
+                    <span class="badge bg-secondary p-2"><i class="fa-solid fa-lock me-1"></i> Closed</span>
+                  {% elif c.status == 'In Progress' or c.status == 'Under Review' %}
+                    <span class="badge bg-info text-dark p-2"><i class="fa-solid fa-spinner me-1"></i> {{ c.status }}</span>
+                  {% else %}
+                    <span class="badge bg-warning text-dark p-2"><i class="fa-solid fa-clock me-1"></i> {{ c.status }}</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if c.rectification_message %}
+                    <div class="p-2 rounded bg-success-subtle border border-success mb-2">
+                      <div class="fw-bold text-success small"><i class="fa-solid fa-wrench me-1"></i> Rectification Details:</div>
+                      <div class="small text-dark mt-1">{{ c.rectification_message }}</div>
+                      <div class="text-muted" style="font-size:0.7rem;">
+                        Rectified by {{ c.rectified_by or 'Admin/Warden' }} {% if c.rectified_at %}on {{ c.rectified_at.strftime('%Y-%m-%d %H:%M') }}{% endif %}
+                      </div>
+                    </div>
+
+                    {% if c.status == 'Rectified' %}
+                      <div class="d-flex gap-2">
+                        <form method="POST" action="{{ url_for('student.complaint_feedback', complaint_id=c._id) }}">
+                          <input type="hidden" name="action" value="resolved">
+                          <button type="submit" class="btn btn-sm btn-success fw-bold text-nowrap">
+                            <i class="fa-solid fa-thumbs-up me-1"></i> Problem Resolved
+                          </button>
+                        </form>
+                        <form method="POST" action="{{ url_for('student.complaint_feedback', complaint_id=c._id) }}">
+                          <input type="hidden" name="action" value="still_exists">
+                          <button type="submit" class="btn btn-sm btn-outline-danger fw-bold text-nowrap">
+                            <i class="fa-solid fa-triangle-exclamation me-1"></i> Problem Still Exists
+                          </button>
+                        </form>
+                      </div>
+                    {% elif c.student_feedback == 'still_exists' %}
+                      <span class="badge bg-danger text-white"><i class="fa-solid fa-rotate-right me-1"></i> Reopened (Reported: Problem Still Exists)</span>
+                    {% elif c.student_feedback == 'resolved' or c.status == 'Closed' %}
+                      <span class="badge bg-success text-white"><i class="fa-solid fa-check-double me-1"></i> Confirmed Resolved</span>
+                    {% endif %}
+                  {% else %}
+                    <span class="text-muted small">Under Inspection...</span>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="text-muted mb-0">You have not submitted any complaints yet.</p>
+    {% endif %}
+  </div>
+</div>
+
+<!-- New Complaint Modal -->
+<div class="modal fade" id="newComplaintModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-header-title fw-bold text-white mb-0"><i class="fa-solid fa-paper-plane me-2"></i> File a Complaint</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="POST" action="{{ url_for('student.complaints') }}">
+        <div class="modal-body p-4">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Complaint Category <span class="text-danger">*</span></label>
+              <select name="category" class="form-select" required>
+                <option value="">Select Category...</option>
+                {% for cat in categories %}
+                  <option value="{{ cat }}">{{ cat }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Priority Level <span class="text-danger">*</span></label>
+              <select name="priority" class="form-select" required>
+                {% for prio in priorities %}
+                  <option value="{{ prio }}" {% if prio == 'Medium' %}selected{% endif %}>{{ prio }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="col-12">
+              <label class="form-label fw-semibold">Subject / Brief Summary <span class="text-danger">*</span></label>
+              <input type="text" name="subject" class="form-control" placeholder="e.g. Tap leakage in Room 101 bathroom" required>
+            </div>
+
+            <div class="col-12">
+              <label class="form-label fw-semibold">Detailed Description <span class="text-danger">*</span></label>
+              <textarea name="description" class="form-control" rows="4" placeholder="Explain the issue in detail..." required></textarea>
+            </div>
+
+            <div class="col-12">
+              <div class="form-check">
+                <input type="checkbox" name="anonymous" class="form-check-input" id="anonCheck">
+                <label class="form-check-label text-muted small" for="anonCheck">
+                  Submit anonymously (Hides your name and role number from complaint summary)
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer bg-light">
+          <button type="button" class="btn btn-secondary fw-semibold" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary fw-bold px-4 shadow">Submit Complaint</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

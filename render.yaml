@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: ghs-hostel-website
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: SECRET_KEY
+        generateValue: true
+      - key: MONGO_URI
+        sync: false
+      - key: DATABASE_NAME
+        value: pg_hostel_mess
