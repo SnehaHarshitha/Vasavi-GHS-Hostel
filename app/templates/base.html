@@ -170,6 +170,87 @@
     {% block content %}{% endblock %}
   </main>
 
+  <!-- Mobile Bottom Navigation Bar (Visible on mobile viewports <= 768px) -->
+  <div class="mobile-bottom-nav d-md-none no-print">
+    <a href="{{ url_for('public.index') }}" class="mobile-bottom-nav-item">
+      <i class="fa-solid fa-house"></i>
+      <span>Home</span>
+    </a>
+    
+    {% if current_user.is_authenticated %}
+      {% if current_user.is_admin() %}
+        <a href="{{ url_for('admin.dashboard') }}" class="mobile-bottom-nav-item">
+          <i class="fa-solid fa-gauge"></i>
+          <span>Dashboard</span>
+        </a>
+        <a href="{{ url_for('warden.snacks_attendance') }}" class="mobile-bottom-nav-item">
+          <i class="fa-solid fa-cookie-bite"></i>
+          <span>Snacks</span>
+        </a>
+        <a href="{{ url_for('warden.cleaning_management') }}" class="mobile-bottom-nav-item">
+          <i class="fa-solid fa-broom"></i>
+          <span>Cleaning</span>
+        </a>
+      {% elif current_user.is_warden() %}
+        <a href="{{ url_for('warden.dashboard') }}" class="mobile-bottom-nav-item">
+          <i class="fa-solid fa-gauge"></i>
+          <span>Dashboard</span>
+        </a>
+        <a href="{{ url_for('warden.snacks_attendance') }}" class="mobile-bottom-nav-item">
+          <i class="fa-solid fa-cookie-bite"></i>
+          <span>Snacks</span>
+        </a>
+        <a href="{{ url_for('warden.cleaning_management') }}" class="mobile-bottom-nav-item">
+          <i class="fa-solid fa-broom"></i>
+          <span>Cleaning</span>
+        </a>
+      {% elif current_user.is_principal() %}
+        <a href="{{ url_for('principal.dashboard') }}" class="mobile-bottom-nav-item">
+          <i class="fa-solid fa-gauge"></i>
+          <span>Dashboard</span>
+        </a>
+        <a href="{{ url_for('principal.sick_leaves') }}" class="mobile-bottom-nav-item">
+          <i class="fa-solid fa-notes-medical"></i>
+          <span>Leaves</span>
+        </a>
+        <a href="{{ url_for('principal.executive_reports') }}" class="mobile-bottom-nav-item">
+          <i class="fa-solid fa-file-invoice"></i>
+          <span>Reports</span>
+        </a>
+      {% else %}
+        <a href="{{ url_for('student.dashboard') }}" class="mobile-bottom-nav-item">
+          <i class="fa-solid fa-gauge"></i>
+          <span>Dashboard</span>
+        </a>
+        <a href="{{ url_for('student.sick_leave') }}" class="mobile-bottom-nav-item">
+          <i class="fa-solid fa-file-signature"></i>
+          <span>Leave</span>
+        </a>
+        <a href="{{ url_for('student.cleaning_status') }}" class="mobile-bottom-nav-item">
+          <i class="fa-solid fa-broom"></i>
+          <span>Cleaning</span>
+        </a>
+      {% endif %}
+      <a href="{{ url_for('student.notifications') }}" class="mobile-bottom-nav-item">
+        <i class="fa-solid fa-bell"></i>
+        <span>Alerts</span>
+      </a>
+    {% else %}
+      <a href="{{ url_for('public.rules') }}" class="mobile-bottom-nav-item">
+        <i class="fa-solid fa-book-bookmark"></i>
+        <span>Rules</span>
+      </a>
+      <a href="{{ url_for('public.mess') }}" class="mobile-bottom-nav-item">
+        <i class="fa-solid fa-utensils"></i>
+        <span>Mess</span>
+      </a>
+      <a href="{{ url_for('auth.login') }}" class="mobile-bottom-nav-item">
+        <i class="fa-solid fa-right-to-bracket"></i>
+        <span>Login</span>
+      </a>
+    {% endif %}
+  </div>
+
   <!-- Footer -->
   <footer class="no-print">
     <div class="container">
