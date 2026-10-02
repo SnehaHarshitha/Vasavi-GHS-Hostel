@@ -40,7 +40,10 @@ def login():
                     'is_active': True
                 }
                 uid = UserModel.create_user(admin_dict)
-                user_data = UserModel.find_by_id(uid)
+                if uid:
+                    user_data = UserModel.find_by_id(uid)
+                if not user_data:
+                    user_data = UserModel.find_by_email('admin@pghostelmess.com') or UserModel.find_by_email('admin')
             elif id_lower in ['warden', 'caretaker', 'warden@pghostelmess.com', 'caretaker@pghostelmess.com', 'warden@srivasaviengg.ac.in', 'caretaker@srivasaviengg.ac.in']:
                 from app.extensions import get_db
                 database = get_db()
@@ -60,7 +63,10 @@ def login():
                         'is_active': True
                     }
                     uid = UserModel.create_user(warden_dict)
-                    user_data = UserModel.find_by_id(uid)
+                    if uid:
+                        user_data = UserModel.find_by_id(uid)
+                    if not user_data:
+                        user_data = UserModel.find_by_email('warden@pghostelmess.com') or UserModel.find_by_email('caretaker')
             elif id_lower in ['principal', 'principal@pghostelmess.com', 'principal@srivasaviengg.ac.in']:
                 principal_dict = {
                     'full_name': 'College Principal',
@@ -74,7 +80,10 @@ def login():
                     'is_active': True
                 }
                 uid = UserModel.create_user(principal_dict)
-                user_data = UserModel.find_by_id(uid)
+                if uid:
+                    user_data = UserModel.find_by_id(uid)
+                if not user_data:
+                    user_data = UserModel.find_by_email('principal@pghostelmess.com') or UserModel.find_by_email('principal')
 
         # Auto-provision student user if not exists and trying roll number login
         if not user_data:
@@ -106,7 +115,10 @@ def login():
                 'is_active': True
             }
             user_id = UserModel.create_user(new_user_dict)
-            user_data = UserModel.find_by_id(user_id)
+            if user_id:
+                user_data = UserModel.find_by_id(user_id)
+            if not user_data:
+                user_data = UserModel.find_by_role_number(raw_id) or UserModel.find_by_email(email_id)
 
         # Verify password or auto-sync default/entered passwords for admin, warden, principal, student
         if user_data:
