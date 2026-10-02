@@ -73,11 +73,16 @@ class RoomModel:
     @staticmethod
     def get_stats():
         db = get_db()
-        total_rooms = db.rooms.count_documents({})
-        occupied_rooms = db.rooms.count_documents({'status': {'$in': ['occupied', 'full']}})
-        available_rooms = db.rooms.count_documents({'status': 'available'})
-        return {
-            'total_rooms': total_rooms,
-            'occupied_rooms': occupied_rooms,
-            'available_rooms': available_rooms
-        }
+        if db is None:
+            return {'total_rooms': 0, 'occupied_rooms': 0, 'available_rooms': 0}
+        try:
+            total_rooms = db.rooms.count_documents({})
+            occupied_rooms = db.rooms.count_documents({'status': {'$in': ['occupied', 'full']}})
+            available_rooms = db.rooms.count_documents({'status': 'available'})
+            return {
+                'total_rooms': total_rooms,
+                'occupied_rooms': occupied_rooms,
+                'available_rooms': available_rooms
+            }
+        except Exception:
+            return {'total_rooms': 0, 'occupied_rooms': 0, 'available_rooms': 0}

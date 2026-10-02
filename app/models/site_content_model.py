@@ -6,23 +6,30 @@ class SiteContentModel:
     # --- HOME CONTENT ---
     @staticmethod
     def get_home_content():
+        default_content = {
+            'type': 'home_hero',
+            'title': 'Modern, Safe & Hygienic Girls Hostel Management',
+            'subtext': 'Sri Vasavi Engineering College Girls Hostel',
+            'description': 'Providing state-of-the-art living facilities, nutritious mess meals with egg/veg selection, daily room cleaning verification, and 24/7 dedicated security for female engineering students.',
+            'banner_image': 'images/svec_campus.jpg'
+        }
         db = get_db()
-        content = db.site_content.find_one({'type': 'home_hero'})
-        if not content:
-            # Default Home Hero Content
-            content = {
-                'type': 'home_hero',
-                'title': 'Modern, Safe & Hygienic Girls Hostel Management',
-                'subtext': 'Sri Vasavi Engineering College Girls Hostel',
-                'description': 'Providing state-of-the-art living facilities, nutritious mess meals with egg/veg selection, daily room cleaning verification, and 24/7 dedicated security for female engineering students.',
-                'banner_image': 'images/svec_campus.jpg'
-            }
-            db.site_content.insert_one(content)
-        return content
+        if db is None:
+            return default_content
+        try:
+            content = db.site_content.find_one({'type': 'home_hero'})
+            if not content:
+                content = default_content
+                db.site_content.insert_one(content)
+            return content
+        except Exception:
+            return default_content
 
     @staticmethod
     def update_home_content(title, subtext, description):
         db = get_db()
+        if db is None:
+            return None
         return db.site_content.update_one(
             {'type': 'home_hero'},
             {'$set': {
@@ -36,36 +43,40 @@ class SiteContentModel:
 
     @staticmethod
     def get_home_sections():
+        default_sections = [
+            {
+                'title': 'Egg / Veg Choice System',
+                'icon': 'fa-egg',
+                'color': 'warning',
+                'description': 'Students can select Egg or Veg preferences for special meal days (Thursdays & Fridays) via their student dashboard.',
+                'order': 1
+            },
+            {
+                'title': 'Housekeeping Verification',
+                'icon': 'fa-broom',
+                'color': 'primary',
+                'description': 'Daily room cleaning tracking with status logs (Cleaned / Pending / Not Cleaned) and Sunday phenyl tasks.',
+                'order': 2
+            },
+            {
+                'title': '24/7 Grievance Portal',
+                'icon': 'fa-comments',
+                'color': 'danger',
+                'description': 'Online complaint registration for maintenance, mess, and room issues with direct resolution tracking by Wardens.',
+                'order': 3
+            }
+        ]
         db = get_db()
-        sections = list(db.home_sections.find().sort('order', 1))
-        if not sections:
-            # Default initial sections
-            default_sections = [
-                {
-                    'title': 'Egg / Veg Choice System',
-                    'icon': 'fa-egg',
-                    'color': 'warning',
-                    'description': 'Students can select Egg or Veg preferences for special meal days (Thursdays & Fridays) via their student dashboard.',
-                    'order': 1
-                },
-                {
-                    'title': 'Housekeeping Verification',
-                    'icon': 'fa-broom',
-                    'color': 'primary',
-                    'description': 'Daily room cleaning tracking with status logs (Cleaned / Pending / Not Cleaned) and Sunday phenyl tasks.',
-                    'order': 2
-                },
-                {
-                    'title': '24/7 Grievance Portal',
-                    'icon': 'fa-comments',
-                    'color': 'danger',
-                    'description': 'Online complaint registration for maintenance, mess, and room issues with direct resolution tracking by Wardens.',
-                    'order': 3
-                }
-            ]
-            db.home_sections.insert_many(default_sections)
+        if db is None:
+            return default_sections
+        try:
             sections = list(db.home_sections.find().sort('order', 1))
-        return sections
+            if not sections:
+                db.home_sections.insert_many(default_sections)
+                sections = list(db.home_sections.find().sort('order', 1))
+            return sections
+        except Exception:
+            return default_sections
 
     @staticmethod
     def add_home_section(title, icon, color, description):
