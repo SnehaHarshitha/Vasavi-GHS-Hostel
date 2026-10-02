@@ -42,19 +42,25 @@ def login():
                 uid = UserModel.create_user(admin_dict)
                 user_data = UserModel.find_by_id(uid)
             elif id_lower in ['warden', 'caretaker', 'warden@pghostelmess.com', 'caretaker@pghostelmess.com', 'warden@srivasaviengg.ac.in', 'caretaker@srivasaviengg.ac.in']:
-                warden_dict = {
-                    'full_name': 'Hostel Caretaker / Warden',
-                    'role_number': 'WARDEN01',
-                    'username': 'caretaker',
-                    'email': 'warden@pghostelmess.com',
-                    'phone': '+91 98480 12345',
-                    'password': password if password else 'Warden@123',
-                    'role': 'warden',
-                    'status': 'approved',
-                    'is_active': True
-                }
-                uid = UserModel.create_user(warden_dict)
-                user_data = UserModel.find_by_id(uid)
+                from app.extensions import get_db
+                database = get_db()
+                existing_warden = database.users.find_one({'role': {'$in': ['warden', 'caretaker']}}) if database is not None else None
+                if existing_warden:
+                    user_data = existing_warden
+                else:
+                    warden_dict = {
+                        'full_name': 'Hostel Caretaker / Warden',
+                        'role_number': 'CARETAKER01',
+                        'username': 'caretaker',
+                        'email': 'warden@pghostelmess.com',
+                        'phone': '+91 98480 12345',
+                        'password': password if password else 'Warden@123',
+                        'role': 'warden',
+                        'status': 'approved',
+                        'is_active': True
+                    }
+                    uid = UserModel.create_user(warden_dict)
+                    user_data = UserModel.find_by_id(uid)
             elif id_lower in ['principal', 'principal@pghostelmess.com', 'principal@srivasaviengg.ac.in']:
                 principal_dict = {
                     'full_name': 'College Principal',

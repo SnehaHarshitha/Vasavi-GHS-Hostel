@@ -33,8 +33,23 @@ class UserModel:
         if 'is_active' not in user_data:
             user_data['is_active'] = True
 
-        result = db.users.insert_one(user_data)
-        return result.inserted_id
+        try:
+            result = db.users.insert_one(user_data)
+            return result.inserted_id
+        except Exception:
+            # Fallback for existing user or duplicate key
+            query = []
+            if user_data.get('email'):
+                query.append({'email': user_data['email']})
+            if user_data.get('role_number'):
+                query.append({'role_number': user_data['role_number']})
+            if user_data.get('role'):
+                query.append({'role': user_data['role']})
+            if query:
+                existing = db.users.find_one({'$or': query})
+                if existing:
+                    return existing['_id']
+            return None
 
     @staticmethod
     def find_by_email(email_or_username):
@@ -48,6 +63,20 @@ class UserModel:
         upper_val = raw.upper()
 
         try:
+            # Role alias matching for caretaker / warden / admin / principal
+            if lower_val in ['caretaker', 'warden', 'warden@pghostelmess.com', 'caretaker@pghostelmess.com']:
+                found = db.users.find_one({'$or': [{'role': {'$in': ['warden', 'caretaker']}}, {'username': {'$in': ['warden', 'caretaker']}}, {'email': lower_val}]})
+                if found:
+                    return found
+            elif lower_val in ['admin', 'admin@pghostelmess.com']:
+                found = db.users.find_one({'$or': [{'role': 'admin'}, {'username': 'admin'}, {'email': lower_val}]})
+                if found:
+                    return found
+            elif lower_val in ['principal', 'principal@pghostelmess.com']:
+                found = db.users.find_one({'$or': [{'role': 'principal'}, {'username': 'principal'}, {'email': lower_val}]})
+                if found:
+                    return found
+
             return db.users.find_one({
                 '$or': [
                     {'email': lower_val},
