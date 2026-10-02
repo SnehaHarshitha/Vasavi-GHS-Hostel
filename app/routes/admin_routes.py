@@ -4,6 +4,7 @@ import json
 from datetime import datetime
 from flask import Blueprint, render_template, request, redirect, url_for, flash, abort, jsonify, current_app, Response
 from flask_login import login_required, current_user
+from app.extensions import get_db
 from app.models.user_model import UserModel
 from app.models.room_model import RoomModel
 from app.models.contact_model import ContactModel
