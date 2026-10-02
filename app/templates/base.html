@@ -21,8 +21,8 @@
   <nav class="navbar navbar-expand-lg navbar-dark navbar-custom sticky-top no-print">
     <div class="container">
       <div class="d-flex align-items-center me-3">
-        <!-- Universal Back Button near GHS Hostel brand area -->
-        <button onclick="window.history.back()" class="btn btn-sm btn-outline-light me-2 fw-semibold" title="Go Back">
+        <!-- Universal Smart Back Button near GHS Hostel brand area -->
+        <button onclick="smartGoBack()" class="btn btn-sm btn-outline-light me-2 fw-semibold" title="Go Back">
           <i class="fa-solid fa-arrow-left me-1"></i> Back
         </button>
         <a class="navbar-brand d-flex align-items-center" href="{{ url_for('public.index') }}">
@@ -210,6 +210,32 @@
   <script src="{{ url_for('static', filename='js/main.js') }}"></script>
   <script src="{{ url_for('static', filename='js/charts.js') }}"></script>
   <script>
+    function smartGoBack() {
+      const referrer = document.referrer;
+      const currentOrigin = window.location.origin;
+      const currentUrl = window.location.href;
+
+      if (referrer && referrer.startsWith(currentOrigin) && referrer !== currentUrl && !referrer.includes('/auth/login') && !referrer.includes('/auth/logout')) {
+        window.location.href = referrer;
+      } else if (window.history.length > 1 && referrer && referrer.startsWith(currentOrigin)) {
+        window.history.back();
+      } else {
+        {% if current_user is defined and current_user.is_authenticated %}
+          {% if current_user.is_admin() %}
+            window.location.href = "{{ url_for('admin.dashboard') }}";
+          {% elif current_user.is_warden() %}
+            window.location.href = "{{ url_for('warden.dashboard') }}";
+          {% elif current_user.is_principal() %}
+            window.location.href = "{{ url_for('principal.dashboard') }}";
+          {% else %}
+            window.location.href = "{{ url_for('student.dashboard') }}";
+          {% endif %}
+        {% else %}
+          window.location.href = "{{ url_for('public.index') }}";
+        {% endif %}
+      }
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
       {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
