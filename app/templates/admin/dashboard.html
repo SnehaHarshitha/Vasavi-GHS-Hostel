@@ -5,47 +5,47 @@
 {% block extra_css %}
 <style>
   body {
-    background-color: #0f172a !important;
-    color: #f8fafc !important;
+    background-color: #ffffff !important;
+    color: #1e293b !important;
   }
-  .admin-card-dark {
-    background: #1e293b;
-    border: 1px solid #334155;
+  .admin-card-light {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
     border-radius: 14px;
-    color: #f8fafc;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    color: #1e293b;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
   }
-  .admin-card-dark:hover {
+  .admin-card-light:hover {
     transform: translateY(-3px);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
     border-color: #3b82f6;
   }
   .admin-badge-glow {
-    box-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
+    box-shadow: 0 0 8px rgba(220, 38, 38, 0.25);
   }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container-fluid py-4 px-lg-5">
+<div class="container-fluid py-4 px-lg-5 bg-white">
   <!-- Top Header Banner -->
-  <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom border-secondary">
+  <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom border-light-subtle">
     <div>
       <span class="badge bg-danger px-3 py-1 text-white text-uppercase fw-bold admin-badge-glow">Super Admin Control Center</span>
-      <h2 class="fw-bold text-white mt-1 mb-0"><i class="fa-solid fa-gauge-high text-warning me-2"></i> System Control Desk & Management Portal</h2>
+      <h2 class="fw-bold text-dark mt-1 mb-0"><i class="fa-solid fa-gauge-high text-primary me-2"></i> System Control Desk & Management Portal</h2>
     </div>
-    <span class="badge bg-secondary text-white fs-6 p-2 border border-slate"><i class="fa-solid fa-calendar me-1"></i> {{ today_str }}</span>
+    <span class="badge bg-light text-dark fs-6 p-2 border"><i class="fa-solid fa-calendar me-1 text-primary"></i> {{ today_str }}</span>
   </div>
 
   <!-- Admin Stats Grid -->
   <div class="row g-3 mb-4">
     <div class="col-md-3 col-6">
-      <div class="card admin-card-dark p-3 border-start border-primary border-4">
+      <div class="card admin-card-light p-3 border-start border-primary border-4">
         <div class="d-flex justify-content-between align-items-center">
           <div>
-            <span class="text-slate-400 small fw-semibold text-uppercase" style="color: #94a3b8;">Registered Students</span>
-            <h3 class="fw-bold text-white mb-0 mt-1">{{ total_students }}</h3>
+            <span class="small fw-bold text-uppercase text-muted">Registered Students</span>
+            <h3 class="fw-bold text-dark mb-0 mt-1">{{ total_students }}</h3>
           </div>
           <i class="fa-solid fa-users text-primary fs-1"></i>
         </div>
@@ -53,23 +53,23 @@
     </div>
 
     <div class="col-md-3 col-6">
-      <div class="card admin-card-dark p-3 border-start border-purple border-4" style="border-left-color: #a855f7 !important;">
+      <div class="card admin-card-light p-3 border-start border-purple border-4" style="border-left-color: #a855f7 !important;">
         <div class="d-flex justify-content-between align-items-center">
           <div>
-            <span class="text-slate-400 small fw-semibold text-uppercase" style="color: #94a3b8;">Approved List</span>
-            <h3 class="fw-bold text-white mb-0 mt-1">{{ total_approved_students }}</h3>
+            <span class="small fw-bold text-uppercase text-muted">Approved List</span>
+            <h3 class="fw-bold text-dark mb-0 mt-1">{{ total_approved_students }}</h3>
           </div>
-          <i class="fa-solid fa-user-check fs-1" style="color: #c084fc;"></i>
+          <i class="fa-solid fa-user-check fs-1" style="color: #a855f7;"></i>
         </div>
       </div>
     </div>
 
     <div class="col-md-3 col-6">
-      <div class="card admin-card-dark p-3 border-start border-amber border-4" style="border-left-color: #f59e0b !important;">
+      <div class="card admin-card-light p-3 border-start border-amber border-4" style="border-left-color: #f59e0b !important;">
         <div class="d-flex justify-content-between align-items-center">
           <div>
-            <span class="text-slate-400 small fw-semibold text-uppercase" style="color: #94a3b8;">Pending Sick Leaves</span>
-            <h3 class="fw-bold text-white mb-0 mt-1">{{ complaint_stats.submitted or 0 }}</h3>
+            <span class="small fw-bold text-uppercase text-muted">Pending Sick Leaves</span>
+            <h3 class="fw-bold text-dark mb-0 mt-1">{{ complaint_stats.submitted or 0 }}</h3>
           </div>
           <i class="fa-solid fa-file-signature text-warning fs-1"></i>
         </div>
@@ -77,11 +77,11 @@
     </div>
 
     <div class="col-md-3 col-6">
-      <div class="card admin-card-dark p-3 border-start border-success border-4" style="border-left-color: #10b981 !important;">
+      <div class="card admin-card-light p-3 border-start border-success border-4" style="border-left-color: #10b981 !important;">
         <div class="d-flex justify-content-between align-items-center">
           <div>
-            <span class="text-slate-400 small fw-semibold text-uppercase" style="color: #94a3b8;">Hostel Rooms</span>
-            <h3 class="fw-bold text-white mb-0 mt-1">{{ room_stats.total_rooms or 0 }}</h3>
+            <span class="small fw-bold text-uppercase text-muted">Hostel Rooms</span>
+            <h3 class="fw-bold text-dark mb-0 mt-1">{{ room_stats.total_rooms or 0 }}</h3>
           </div>
           <i class="fa-solid fa-building text-success fs-1"></i>
         </div>
@@ -90,109 +90,109 @@
   </div>
 
   <!-- Prominent Action Hero Banner -->
-  <div class="card admin-card-dark p-4 mb-4 text-white shadow-lg" style="background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #1e3a8a 100%);">
+  <div class="card p-4 mb-4 text-white shadow-sm border-0" style="background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); border-radius: 14px;">
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center">
       <div>
         <h4 class="fw-bold mb-1"><i class="fa-solid fa-graduation-cap text-warning me-2"></i> System Content & LMS Timetable Control Center</h4>
-        <p class="mb-0 text-slate-300" style="color: #cbd5e1;">Edit Food Timetable, Announcements, Approved Student Lists, and Staff Attendance Records.</p>
+        <p class="mb-0 text-white-50">Edit Food Timetable, Announcements, Approved Student Lists, and Staff Attendance Records.</p>
       </div>
-      <a href="{{ url_for('admin.lms_dashboard') }}" class="btn btn-warning btn-lg text-dark fw-bold mt-3 mt-md-0 px-4 shadow">
+      <a href="{{ url_for('admin.lms_dashboard') }}" class="btn btn-warning btn-lg text-dark fw-bold mt-3 mt-md-0 px-4 shadow-sm">
         <i class="fa-solid fa-pen-to-square me-2"></i> Open LMS Control Center
       </a>
     </div>
   </div>
 
-  <!-- Quick Action Navigation Modules Grid (Consistent Slate Theme) -->
-  <h5 class="fw-bold text-white mb-3"><i class="fa-solid fa-cubes text-info me-2"></i> Quick Administrative Operations</h5>
+  <!-- Quick Action Navigation Modules Grid -->
+  <h5 class="fw-bold text-dark mb-3"><i class="fa-solid fa-cubes text-primary me-2"></i> Quick Administrative Operations</h5>
   
   <div class="row g-3 mb-4">
     <div class="col-md-3 col-6">
       <a href="{{ url_for('admin.lms_dashboard', active_tab='students') }}" class="text-decoration-none">
-        <div class="card admin-card-dark p-3 text-center h-100">
+        <div class="card admin-card-light p-3 text-center h-100">
           <i class="fa-solid fa-user-check text-primary fs-2 mb-2"></i>
-          <h6 class="fw-bold text-white mb-1">Approved Student List</h6>
-          <span class="small text-slate-400" style="color: #94a3b8;">Add, Edit & PDF Import</span>
+          <h6 class="fw-bold text-dark mb-1">Approved Student List</h6>
+          <span class="small text-muted">Add, Edit & PDF Import</span>
         </div>
       </a>
     </div>
 
     <div class="col-md-3 col-6">
       <a href="{{ url_for('warden.rooms') }}" class="text-decoration-none">
-        <div class="card admin-card-dark p-3 text-center h-100">
+        <div class="card admin-card-light p-3 text-center h-100">
           <i class="fa-solid fa-bed text-warning fs-2 mb-2"></i>
-          <h6 class="fw-bold text-white mb-1">Room Allocation</h6>
-          <span class="small text-slate-400" style="color: #94a3b8;">Assign & Sort Rooms</span>
+          <h6 class="fw-bold text-dark mb-1">Room Allocation</h6>
+          <span class="small text-muted">Assign & Sort Rooms</span>
         </div>
       </a>
     </div>
 
     <div class="col-md-3 col-6">
       <a href="{{ url_for('admin.snacks_attendance') }}" class="text-decoration-none">
-        <div class="card admin-card-dark p-3 text-center h-100">
+        <div class="card admin-card-light p-3 text-center h-100">
           <i class="fa-solid fa-cookie-bite text-warning fs-2 mb-2"></i>
-          <h6 class="fw-bold text-white mb-1">Daily Snacks Attendance</h6>
-          <span class="small text-slate-400" style="color: #94a3b8;">Checkbox Attendance</span>
+          <h6 class="fw-bold text-dark mb-1">Daily Snacks Attendance</h6>
+          <span class="small text-muted">Checkbox Attendance</span>
         </div>
       </a>
     </div>
 
     <div class="col-md-3 col-6">
       <a href="{{ url_for('admin.leaves') }}" class="text-decoration-none">
-        <div class="card admin-card-dark p-3 text-center h-100">
+        <div class="card admin-card-light p-3 text-center h-100">
           <i class="fa-solid fa-file-signature text-danger fs-2 mb-2"></i>
-          <h6 class="fw-bold text-white mb-1">Leave Management</h6>
-          <span class="small text-slate-400" style="color: #94a3b8;">Approve & Sick Records</span>
+          <h6 class="fw-bold text-dark mb-1">Leave Management</h6>
+          <span class="small text-muted">Approve & Sick Records</span>
         </div>
       </a>
     </div>
 
     <div class="col-md-3 col-6">
       <a href="{{ url_for('admin.history_reports') }}" class="text-decoration-none">
-        <div class="card admin-card-dark p-3 text-center h-100">
+        <div class="card admin-card-light p-3 text-center h-100">
           <i class="fa-solid fa-calendar-days text-info fs-2 mb-2"></i>
-          <h6 class="fw-bold text-white mb-1">Daily & Monthly History</h6>
-          <span class="small text-slate-400" style="color: #94a3b8;">Date-wise Records & Reports</span>
+          <h6 class="fw-bold text-dark mb-1">Daily & Monthly History</h6>
+          <span class="small text-muted">Date-wise Records & Reports</span>
         </div>
       </a>
     </div>
 
     <div class="col-md-3 col-6">
       <a href="{{ url_for('warden.cleaning_management') }}" class="text-decoration-none">
-        <div class="card admin-card-dark p-3 text-center h-100">
+        <div class="card admin-card-light p-3 text-center h-100">
           <i class="fa-solid fa-broom text-success fs-2 mb-2"></i>
-          <h6 class="fw-bold text-white mb-1">Daily Room Cleaning</h6>
-          <span class="small text-slate-400" style="color: #94a3b8;">Cleaning Checkbook</span>
+          <h6 class="fw-bold text-dark mb-1">Daily Room Cleaning</h6>
+          <span class="small text-muted">Cleaning Checkbook</span>
         </div>
       </a>
     </div>
 
     <div class="col-md-3 col-6">
       <a href="{{ url_for('admin.users') }}" class="text-decoration-none">
-        <div class="card admin-card-dark p-3 text-center h-100">
+        <div class="card admin-card-light p-3 text-center h-100">
           <i class="fa-solid fa-users-gear text-primary fs-2 mb-2"></i>
-          <h6 class="fw-bold text-white mb-1">User Accounts</h6>
-          <span class="small text-slate-400" style="color: #94a3b8;">Manage Passwords & Roles</span>
+          <h6 class="fw-bold text-dark mb-1">User Accounts</h6>
+          <span class="small text-muted">Manage Passwords & Roles</span>
         </div>
       </a>
     </div>
 
     <div class="col-md-3 col-6">
       <a href="{{ url_for('admin.settings') }}" class="text-decoration-none">
-        <div class="card admin-card-dark p-3 text-center h-100">
+        <div class="card admin-card-light p-3 text-center h-100">
           <i class="fa-solid fa-sliders text-secondary fs-2 mb-2"></i>
-          <h6 class="fw-bold text-white mb-1">System Settings</h6>
-          <span class="small text-slate-400" style="color: #94a3b8;">Hostel Rules & Config</span>
+          <h6 class="fw-bold text-dark mb-1">System Settings</h6>
+          <span class="small text-muted">Hostel Rules & Config</span>
         </div>
       </a>
     </div>
   </div>
 
   <!-- Additional Management Quick Links Bar -->
-  <div class="card admin-card-dark p-3 mb-4">
+  <div class="card admin-card-light p-3 mb-4">
     <div class="d-flex gap-2 flex-wrap justify-content-center">
-      <a href="{{ url_for('admin.contact_messages') }}" class="btn btn-outline-info btn-sm fw-bold"><i class="fa-solid fa-envelope me-1"></i> Contact Messages ({{ unread_messages }})</a>
+      <a href="{{ url_for('admin.contact_messages') }}" class="btn btn-outline-primary btn-sm fw-bold"><i class="fa-solid fa-envelope me-1"></i> Contact Messages ({{ unread_messages }})</a>
       <a href="{{ url_for('warden.complaints') }}" class="btn btn-outline-danger btn-sm fw-bold"><i class="fa-solid fa-headset me-1"></i> Complaints Management</a>
-      <a href="{{ url_for('public.mess') }}" target="_blank" class="btn btn-outline-warning btn-sm fw-bold"><i class="fa-solid fa-utensils me-1"></i> Public Mess Menu</a>
+      <a href="{{ url_for('public.mess') }}" target="_blank" class="btn btn-outline-warning text-dark btn-sm fw-bold"><i class="fa-solid fa-utensils me-1"></i> Public Mess Menu</a>
       <a href="{{ url_for('admin.lms_dashboard', active_tab='staff') }}" class="btn btn-outline-success btn-sm fw-bold"><i class="fa-solid fa-clipboard-user me-1"></i> Staff Attendance Register</a>
     </div>
   </div>
