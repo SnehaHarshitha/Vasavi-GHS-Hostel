@@ -125,11 +125,11 @@ def login():
 
             user = User(user_data)
 
-            # Auto approve student status if pending or deactivated
-            if user.role == 'student' and (user.status == 'pending' or not user.is_active):
+            # Auto approve and activate admin, warden, caretaker, principal, and student accounts
+            if user.role in ['admin', 'warden', 'caretaker', 'principal', 'student'] and (user.status != 'approved' or not user.is_active):
                 UserModel.update_user(user_data['_id'], {'status': 'approved', 'is_active': True})
-                user.status = 'approved'
-                user.is_active = True
+                user_data = UserModel.find_by_id(user_data['_id'])
+                user = User(user_data)
 
             if not user.is_active:
                 flash('Your account has been deactivated. Please contact the Warden or Admin.', 'warning')
