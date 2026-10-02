@@ -155,7 +155,7 @@
             </div>
           </div>
 
-          <form method="POST" action="{{ url_for('auth.login') }}">
+          <form id="emp_form" method="POST" action="{{ url_for('auth.login') }}">
             <div class="mb-3">
               <label class="form-label fw-semibold text-dark small">Username or Official Email</label>
               <div class="input-group">
@@ -213,7 +213,7 @@
             </div>
           </div>
 
-          <form method="POST" action="{{ url_for('auth.login') }}">
+          <form id="stu_form" method="POST" action="{{ url_for('auth.login') }}">
             <div class="mb-3">
               <label class="form-label fw-semibold text-dark small">College Role Number / Email</label>
               <div class="input-group">
@@ -268,11 +268,17 @@
   function fillEmp(email, password) {
     document.getElementById('emp_identifier').value = email;
     document.getElementById('emp_password').value = password;
+    setTimeout(function() {
+      document.getElementById('emp_form').submit();
+    }, 100);
   }
 
   function fillStu(id, password) {
     document.getElementById('stu_identifier').value = id;
     document.getElementById('stu_password').value = password;
+    setTimeout(function() {
+      document.getElementById('stu_form').submit();
+    }, 100);
   }
 </script>
 {% endblock %}
