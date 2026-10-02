@@ -1,80 +1,188 @@
 {% extends "base.html" %}
 
-{% block title %}Room Cleaning & Sunday Schedule - Student Portal{% endblock %}
+{% block title %}Room Cleaning Status & Feedback - Student Portal{% endblock %}
 
 {% block content %}
 <div class="container py-4">
-  <div class="d-flex justify-content-between align-items-center mb-4">
+  <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 pb-2 border-bottom">
     <div>
-      <h2 class="fw-bold text-primary mb-1"><i class="fa-solid fa-broom me-2"></i> Room Cleaning & Sunday Tasks</h2>
-      <p class="text-muted mb-0">Track housekeeping log for Room {{ current_user.room_number or 'Unassigned' }}.</p>
+      <h2 class="fw-bold text-primary mb-1"><i class="fa-solid fa-broom me-2 text-success"></i> Daily Room Cleaning Status & Feedback</h2>
+      <p class="text-muted mb-0">Housekeeping records for Room <strong>{{ current_user.room_number or '101' }}</strong>.</p>
+    </div>
+    <a href="{{ url_for('student.dashboard') }}" class="btn btn-outline-secondary btn-sm mt-2 mt-md-0"><i class="fa-solid fa-arrow-left me-1"></i> Dashboard</a>
+  </div>
+
+  <!-- Authenticated Room Info Banner -->
+  <div class="card card-custom p-3 bg-light border mb-4">
+    <div class="row g-2 align-items-center small">
+      <div class="col-md-3"><strong>Student Name:</strong> <span class="text-primary fw-bold">{{ current_user.full_name }}</span></div>
+      <div class="col-md-3"><strong>Role Number:</strong> <span class="text-primary fw-bold">{{ current_user.role_number }}</span></div>
+      <div class="col-md-3"><strong>Allocated Room:</strong> <span class="text-primary fw-bold">Room {{ current_user.room_number or '101' }}</span></div>
+      <div class="col-md-3 text-md-end"><strong>Today's Date:</strong> {{ today_str }}</div>
     </div>
   </div>
 
   <div class="row g-4 mb-4">
-    <!-- Today Status -->
-    <div class="col-md-6">
+    <!-- Today's Detailed Room Cleaning Status -->
+    <div class="col-lg-6">
       <div class="card card-custom p-4 border-0 shadow-sm h-100">
-        <h4 class="fw-bold text-dark mb-3">Today's Cleaning Status ({{ today_str }})</h4>
-        {% if today_record %}
-          <div class="p-4 bg-light rounded text-center border">
-            <i class="fa-solid fa-check-circle fs-1 text-success mb-2"></i>
-            <h3 class="fw-bold text-dark mb-1">Status: {{ today_record.status }}</h3>
-            <p class="text-muted small mb-1">Cleaned by: {{ today_record.cleaned_by }}</p>
-            {% if today_record.remarks %}
-              <p class="text-muted small mb-0">Remarks: "{{ today_record.remarks }}"</p>
+        <h5 class="fw-bold text-dark mb-3"><i class="fa-solid fa-calendar-check text-success me-2"></i> Today's Housekeeping Checklist ({{ today_str }})</h5>
+        
+        <div class="p-3 bg-light rounded border mb-3">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <span class="fw-bold text-dark">Overall Status:</span>
+            {% if today_record %}
+              {% if today_record.status == 'Completed' %}
+                <span class="badge bg-success fs-6"><i class="fa-solid fa-circle-check me-1"></i> Cleaning Completed</span>
+              {% elif today_record.status == 'Problem Reported' %}
+                <span class="badge bg-danger fs-6"><i class="fa-solid fa-triangle-exclamation me-1"></i> Problem Reported</span>
+              {% elif today_record.status == 'In Progress' %}
+                <span class="badge bg-info text-dark fs-6"><i class="fa-solid fa-spinner me-1"></i> Cleaning In Progress</span>
+              {% else %}
+                <span class="badge bg-warning text-dark fs-6"><i class="fa-solid fa-clock me-1"></i> Cleaning Pending</span>
+              {% endif %}
+            {% else %}
+              <span class="badge bg-secondary fs-6"><i class="fa-solid fa-circle-question me-1"></i> Not Yet Updated</span>
             {% endif %}
           </div>
-        {% else %}
-          <div class="p-4 bg-light rounded text-center border">
-            <i class="fa-solid fa-hourglass-half fs-1 text-warning mb-2"></i>
-            <h4 class="fw-bold text-dark mb-1">Status: Pending Cleaning</h4>
-            <p class="text-muted small mb-0">Housekeeping staff will visit your room between 9:00 AM and 12:00 PM.</p>
-          </div>
-        {% endif %}
-
-        <div class="mt-4 pt-3 border-top">
-          <p class="small text-muted mb-2">Room not cleaned or faced hygiene issues?</p>
-          <a href="{{ url_for('student.complaints') }}" class="btn btn-outline-danger btn-sm fw-bold">
-            <i class="fa-solid fa-triangle-exclamation me-1"></i> Report Missed Room Cleaning
-          </a>
+          
+          {% if today_record %}
+            <div class="small text-muted mb-1">Assigned Staff: <strong>{{ today_record.cleaned_by or 'Housekeeping Staff' }}</strong> | Checked by: <strong>{{ today_record.checked_by or 'Warden' }}</strong> ({{ today_record.check_time or 'Today' }})</div>
+            {% if today_record.remarks %}
+              <div class="small text-dark fst-italic">Remarks: "{{ today_record.remarks }}"</div>
+            {% endif %}
+          {% endif %}
         </div>
+
+        <!-- Task Checklist Breakdown -->
+        <h6 class="fw-bold text-muted small text-uppercase mb-2">Task Completion Checklist</h6>
+        <ul class="list-group list-group-flush small mb-3 border rounded">
+          <li class="list-group-item d-flex justify-content-between align-items-center py-2">
+            <span><i class="fa-solid fa-door-closed me-2 text-primary"></i> Room Surface Cleaned</span>
+            {% if today_record and today_record.room_cleaned %}
+              <span class="badge bg-success">Done</span>
+            {% else %}
+              <span class="badge bg-warning text-dark">Pending</span>
+            {% endif %}
+          </li>
+          <li class="list-group-item d-flex justify-content-between align-items-center py-2">
+            <span><i class="fa-solid fa-bath me-2 text-info"></i> Bathroom Cleaned</span>
+            {% if today_record and today_record.bathroom_cleaned %}
+              <span class="badge bg-success">Done</span>
+            {% else %}
+              <span class="badge bg-warning text-dark">Pending</span>
+            {% endif %}
+          </li>
+          <li class="list-group-item d-flex justify-content-between align-items-center py-2">
+            <span><i class="fa-solid fa-sparkles me-2 text-warning"></i> Floor Mopped</span>
+            {% if today_record and today_record.floor_cleaned %}
+              <span class="badge bg-success">Done</span>
+            {% else %}
+              <span class="badge bg-warning text-dark">Pending</span>
+            {% endif %}
+          </li>
+          <li class="list-group-item d-flex justify-content-between align-items-center py-2">
+            <span><i class="fa-solid fa-trash-can me-2 text-danger"></i> Waste Disposed</span>
+            {% if today_record and today_record.waste_removed %}
+              <span class="badge bg-success">Done</span>
+            {% else %}
+              <span class="badge bg-warning text-dark">Pending</span>
+            {% endif %}
+          </li>
+          <li class="list-group-item d-flex justify-content-between align-items-center py-2">
+            <span><i class="fa-solid fa-bottle-water me-2 text-purple" style="color:#6b21a8;"></i> Phenyl Bottle Provided</span>
+            {% if today_record and today_record.phenyl_kept %}
+              <span class="badge bg-success">Provided</span>
+            {% else %}
+              <span class="badge bg-secondary">Not Available</span>
+            {% endif %}
+          </li>
+        </ul>
       </div>
     </div>
 
-    <!-- Sunday Phenyl Cleaning Schedule -->
-    <div class="col-md-6">
-      <div class="card card-custom p-4 border-0 shadow-sm h-100">
-        <h4 class="fw-bold text-dark mb-3"><i class="fa-solid fa-spray-can-sparkles me-2 text-warning"></i> Sunday Room Phenyl Schedule</h4>
-        {% if sunday_tasks %}
-          <ul class="list-group list-group-flush">
-            {% for task in sunday_tasks %}
-              <li class="list-group-item py-3 px-0 border-bottom">
-                <div class="d-flex justify-content-between align-items-center">
-                  <h6 class="fw-bold mb-0 text-primary">{{ task.task_name }}</h6>
-                  <span class="badge bg-info text-dark">{{ task.status }}</span>
-                </div>
-                <div class="small text-muted mt-1">
-                  <i class="fa-solid fa-calendar me-1"></i> Date: <strong>{{ task.date }}</strong> | Target: {{ task.rooms_or_floor }}
-                </div>
-                {% if task.instructions %}
-                  <div class="small text-dark bg-light p-2 rounded mt-2">
-                    <strong>Instructions:</strong> {{ task.instructions }}
-                  </div>
-                {% endif %}
-              </li>
-            {% endfor %}
-          </ul>
-        {% else %}
-          <p class="text-muted">No Sunday phenyl cleaning tasks scheduled.</p>
-        {% endif %}
+    <!-- Student Cleaning Feedback / Complaint Form -->
+    <div class="col-lg-6">
+      <div class="card card-custom p-4 border-0 shadow-sm h-100 border-start border-4 border-warning">
+        <h5 class="fw-bold text-dark mb-1"><i class="fa-solid fa-triangle-exclamation text-warning me-2"></i> Submit Cleaning Complaint / Feedback</h5>
+        <p class="small text-muted mb-3">Report missed cleaning or hygiene issues for Room {{ current_user.room_number or '101' }}.</p>
+
+        <form method="POST" action="{{ url_for('student.cleaning_status') }}" enctype="multipart/form-data">
+          <div class="mb-2">
+            <label class="form-label fw-semibold small">Problem Category <span class="text-danger">*</span></label>
+            <select name="category" class="form-select form-select-sm" required>
+              <option value="Room Not Cleaned">Room Not Cleaned</option>
+              <option value="Bathroom Dirty">Bathroom Dirty</option>
+              <option value="Waste Not Removed">Waste Basket Not Cleared</option>
+              <option value="Phenyl Not Provided">Phenyl Bottle Not Provided</option>
+              <option value="Other Hygiene Issue">Other Hygiene Issue</option>
+            </select>
+          </div>
+
+          <div class="mb-2">
+            <label class="form-label fw-semibold small">Description of Problem <span class="text-danger">*</span></label>
+            <textarea name="description" class="form-control form-control-sm" rows="3" placeholder="Please describe the cleaning issue in your room..." required></textarea>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold small">Optional Photo Attachment</label>
+            <input type="file" name="photo" class="form-control form-control-sm" accept="image/*">
+          </div>
+
+          <button type="submit" class="btn btn-warning btn-sm text-dark fw-bold w-100 shadow">
+            <i class="fa-solid fa-paper-plane me-1"></i> Submit Cleaning Complaint
+          </button>
+        </form>
       </div>
     </div>
   </div>
 
+  <!-- Cleaning Complaints & Rectification Log -->
+  {% if cleaning_complaints %}
+  <div class="card card-custom p-4 border-0 shadow-sm mb-4">
+    <h5 class="fw-bold text-dark mb-3"><i class="fa-solid fa-wrench text-danger me-2"></i> My Cleaning Complaints & Rectification Log</h5>
+    <div class="table-responsive">
+      <table class="table table-hover align-middle">
+        <thead class="table-light">
+          <tr>
+            <th>Date</th>
+            <th>Category</th>
+            <th>Description</th>
+            <th>Status</th>
+            <th>Rectification Message from Warden</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for cmp in cleaning_complaints %}
+          <tr>
+            <td class="small text-muted">{{ cmp.created_at.strftime('%Y-%m-%d') if cmp.created_at else today_str }}</td>
+            <td class="fw-semibold text-dark">{{ cmp.subject or cmp.category }}</td>
+            <td class="small text-dark">{{ cmp.description }}</td>
+            <td>
+              {% if cmp.status in ['Rectified', 'Closed', 'Resolved'] %}
+                <span class="badge bg-success"><i class="fa-solid fa-circle-check me-1"></i> Rectified & Closed</span>
+              {% else %}
+                <span class="badge bg-danger"><i class="fa-solid fa-clock me-1"></i> {{ cmp.status }}</span>
+              {% endif %}
+            </td>
+            <td class="small fw-semibold text-success">
+              {% if cmp.rectification_message %}
+                <i class="fa-solid fa-comment-check me-1"></i> {{ cmp.rectification_message }} (By {{ cmp.rectified_by or 'Warden' }})
+              {% else %}
+                <span class="text-muted fst-italic">Under review by Warden</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+
   <!-- Cleaning History Log -->
   <div class="card card-custom p-4 border-0 shadow-sm">
-    <h4 class="fw-bold text-dark mb-3"><i class="fa-solid fa-list-check me-2"></i> Housekeeping History Log</h4>
+    <h5 class="fw-bold text-dark mb-3"><i class="fa-solid fa-list-check me-2"></i> Housekeeping History Log for Room {{ current_user.room_number or '101' }}</h5>
     {% if history %}
       <div class="table-responsive">
         <table class="table table-hover align-middle">
@@ -83,27 +191,33 @@
               <th>Date</th>
               <th>Status</th>
               <th>Staff / Attendant</th>
+              <th>Checked By</th>
               <th>Remarks</th>
             </tr>
           </thead>
           <tbody>
             {% for log in history %}
               <tr>
-                <td>{{ log.date }}</td>
+                <td class="fw-bold text-primary">{{ log.date }}</td>
                 <td>
-                  <span class="badge {% if log.status == 'Completed' %}bg-success{% else %}bg-warning text-dark{% endif %}">
-                    {{ log.status }}
-                  </span>
+                  {% if log.status == 'Completed' %}
+                    <span class="badge bg-success">Completed</span>
+                  {% elif log.status == 'Problem Reported' %}
+                    <span class="badge bg-danger">Problem Reported</span>
+                  {% else %}
+                    <span class="badge bg-warning text-dark">{{ log.status or 'Pending' }}</span>
+                  {% endif %}
                 </td>
-                <td>{{ log.cleaned_by or 'Staff' }}</td>
-                <td>{{ log.remarks or '-' }}</td>
+                <td>{{ log.cleaned_by or 'Housekeeping Staff' }}</td>
+                <td class="small text-muted">{{ log.checked_by or 'Warden' }} ({{ log.check_time or '—' }})</td>
+                <td class="small text-muted">{{ log.remarks or '—' }}</td>
               </tr>
             {% endfor %}
           </tbody>
         </table>
       </div>
     {% else %}
-      <p class="text-muted">No housekeeping history records found.</p>
+      <p class="text-muted mb-0">No housekeeping history records found.</p>
     {% endif %}
   </div>
 </div>

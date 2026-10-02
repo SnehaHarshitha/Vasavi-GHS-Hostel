@@ -83,18 +83,28 @@
             <!-- 7. Assigned Room Number -->
             <div class="col-md-6">
               <label class="form-label fw-semibold">Assigned Room Number</label>
-              <input type="text" name="room_number" class="form-control" placeholder="e.g. 101" value="{{ form_data.get('room_number', '101') if form_data else '101' }}">
+              <input type="text" id="room_number_input" name="room_number" class="form-control" placeholder="e.g. 101" value="{{ form_data.get('room_number', '101') if form_data else '101' }}">
             </div>
 
             <!-- 8. Password & Confirm Password -->
             <div class="col-md-6">
               <label class="form-label fw-semibold">Password <span class="text-danger">*</span></label>
-              <input type="password" name="password" class="form-control" placeholder="••••••••" required>
+              <div class="input-group">
+                <input type="password" id="reg_password" name="password" class="form-control" placeholder="••••••••" required>
+                <button type="button" class="btn btn-outline-secondary" onclick="togglePasswordVisibility('reg_password', this)" title="Show/Hide Password">
+                  <i class="fa-solid fa-eye"></i>
+                </button>
+              </div>
             </div>
 
             <div class="col-md-6">
               <label class="form-label fw-semibold">Confirm Password <span class="text-danger">*</span></label>
-              <input type="password" name="confirm_password" class="form-control" placeholder="••••••••" required>
+              <div class="input-group">
+                <input type="password" id="reg_confirm_password" name="confirm_password" class="form-control" placeholder="••••••••" required>
+                <button type="button" class="btn btn-outline-secondary" onclick="togglePasswordVisibility('reg_confirm_password', this)" title="Show/Hide Password">
+                  <i class="fa-solid fa-eye"></i>
+                </button>
+              </div>
             </div>
 
             <div class="col-12 mt-4">
@@ -133,12 +143,16 @@
         if (data.status === 'success') {
           const cand = data.candidate;
           box.className = 'col-12 alert alert-success py-2 mb-0 shadow-sm';
-          box.innerHTML = '<i class="fa-solid fa-circle-check me-2 fs-6"></i> <strong>Approved Record Found:</strong> ' + cand.full_name + ' (' + cand.roll_number + ') - ' + cand.department + ' Sem ' + cand.semester;
+          let displayMsg = '<i class="fa-solid fa-circle-check me-2 fs-6"></i> <strong>Approved Record Found:</strong> ' + cand.full_name + ' (' + cand.roll_number + ') - ' + cand.department + ' Sem ' + cand.semester;
+          if (cand.room_number) {
+            displayMsg += ' | Room: ' + cand.room_number;
+          }
+          box.innerHTML = displayMsg;
           
-          if (cand.full_name && !document.getElementById('full_name_input').value) {
+          if (cand.full_name) {
             document.getElementById('full_name_input').value = cand.full_name;
           }
-          if (cand.email && !document.getElementById('email_input').value) {
+          if (cand.email) {
             document.getElementById('email_input').value = cand.email;
           }
           if (cand.department) {
@@ -146,6 +160,9 @@
           }
           if (cand.semester) {
             document.getElementById('sem_select').value = cand.semester;
+          }
+          if (cand.room_number) {
+            document.getElementById('room_number_input').value = cand.room_number;
           }
         } else {
           box.className = 'col-12 alert alert-danger py-2 mb-0 shadow-sm';

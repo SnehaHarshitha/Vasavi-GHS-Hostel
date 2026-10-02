@@ -1,76 +1,199 @@
 {% extends "base.html" %}
 
-{% block title %}System Admin Dashboard - PG Hostel Mess & LMS{% endblock %}
+{% block title %}System Admin Dashboard - GHS Hostel Control Center{% endblock %}
+
+{% block extra_css %}
+<style>
+  body {
+    background-color: #0f172a !important;
+    color: #f8fafc !important;
+  }
+  .admin-card-dark {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 14px;
+    color: #f8fafc;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .admin-card-dark:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    border-color: #3b82f6;
+  }
+  .admin-badge-glow {
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
+  }
+</style>
+{% endblock %}
 
 {% block content %}
 <div class="container-fluid py-4 px-lg-5">
-  <div class="d-flex justify-content-between align-items-center mb-4">
+  <!-- Top Header Banner -->
+  <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom border-secondary">
     <div>
-      <span class="badge bg-danger px-3 py-1 text-white text-uppercase fw-bold">Super Admin Control Center</span>
-      <h2 class="fw-bold text-primary mt-1 mb-0">System Control Desk & LMS Edit Mode</h2>
+      <span class="badge bg-danger px-3 py-1 text-white text-uppercase fw-bold admin-badge-glow">Super Admin Control Center</span>
+      <h2 class="fw-bold text-white mt-1 mb-0"><i class="fa-solid fa-gauge-high text-warning me-2"></i> System Control Desk & Management Portal</h2>
     </div>
-    <span class="badge bg-light text-dark fs-6 p-2 border"><i class="fa-solid fa-calendar me-1"></i> {{ today_str }}</span>
+    <span class="badge bg-secondary text-white fs-6 p-2 border border-slate"><i class="fa-solid fa-calendar me-1"></i> {{ today_str }}</span>
   </div>
 
-  <!-- Admin Stats Row 1: Hostel -->
+  <!-- Admin Stats Grid -->
   <div class="row g-3 mb-4">
-    <div class="col-md-4">
-      <div class="card card-custom p-3 stat-card stat-primary">
+    <div class="col-md-3 col-6">
+      <div class="card admin-card-dark p-3 border-start border-primary border-4">
         <div class="d-flex justify-content-between align-items-center">
           <div>
-            <span class="text-muted small fw-semibold">Active Registered Students</span>
-            <h3 class="fw-bold text-dark mb-0 mt-1">{{ total_students }}</h3>
+            <span class="text-slate-400 small fw-semibold text-uppercase" style="color: #94a3b8;">Registered Students</span>
+            <h3 class="fw-bold text-white mb-0 mt-1">{{ total_students }}</h3>
           </div>
           <i class="fa-solid fa-users text-primary fs-1"></i>
         </div>
       </div>
     </div>
 
-    <div class="col-md-4">
-      <div class="card card-custom p-3 stat-card stat-purple">
+    <div class="col-md-3 col-6">
+      <div class="card admin-card-dark p-3 border-start border-purple border-4" style="border-left-color: #a855f7 !important;">
         <div class="d-flex justify-content-between align-items-center">
           <div>
-            <span class="text-muted small fw-semibold">Approved Student List</span>
-            <h3 class="fw-bold text-dark mb-0 mt-1">{{ total_approved_students }} Students</h3>
+            <span class="text-slate-400 small fw-semibold text-uppercase" style="color: #94a3b8;">Approved List</span>
+            <h3 class="fw-bold text-white mb-0 mt-1">{{ total_approved_students }}</h3>
           </div>
-          <i class="fa-solid fa-user-check text-purple fs-1"></i>
+          <i class="fa-solid fa-user-check fs-1" style="color: #c084fc;"></i>
         </div>
       </div>
     </div>
 
-    <div class="col-md-4">
-      <div class="card card-custom p-3 stat-card stat-amber">
+    <div class="col-md-3 col-6">
+      <div class="card admin-card-dark p-3 border-start border-amber border-4" style="border-left-color: #f59e0b !important;">
         <div class="d-flex justify-content-between align-items-center">
           <div>
-            <span class="text-muted small fw-semibold">LMS Announcements</span>
-            <h3 class="fw-bold text-dark mb-0 mt-1">{{ total_announcements }} Notices</h3>
+            <span class="text-slate-400 small fw-semibold text-uppercase" style="color: #94a3b8;">Pending Sick Leaves</span>
+            <h3 class="fw-bold text-white mb-0 mt-1">{{ complaint_stats.submitted or 0 }}</h3>
           </div>
-          <i class="fa-solid fa-bullhorn text-warning fs-1"></i>
+          <i class="fa-solid fa-file-signature text-warning fs-1"></i>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3 col-6">
+      <div class="card admin-card-dark p-3 border-start border-success border-4" style="border-left-color: #10b981 !important;">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <span class="text-slate-400 small fw-semibold text-uppercase" style="color: #94a3b8;">Hostel Rooms</span>
+            <h3 class="fw-bold text-white mb-0 mt-1">{{ room_stats.total_rooms or 0 }}</h3>
+          </div>
+          <i class="fa-solid fa-building text-success fs-1"></i>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Prominent LMS Action Banner -->
-  <div class="card card-custom p-4 mb-4 bg-gradient text-white shadow-sm" style="background: linear-gradient(135deg, #1e3a8a, #6b21a8);">
+  <!-- Prominent Action Hero Banner -->
+  <div class="card admin-card-dark p-4 mb-4 text-white shadow-lg" style="background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #1e3a8a 100%);">
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center">
       <div>
-        <h4 class="fw-bold mb-1"><i class="fa-solid fa-graduation-cap text-warning me-2"></i> LMS Content & Timetable Control Center</h4>
-        <p class="mb-0 text-white-50">Manage Food Timetable, Announcements, and Approved Student Lists.</p>
+        <h4 class="fw-bold mb-1"><i class="fa-solid fa-graduation-cap text-warning me-2"></i> System Content & LMS Timetable Control Center</h4>
+        <p class="mb-0 text-slate-300" style="color: #cbd5e1;">Edit Food Timetable, Announcements, Approved Student Lists, and Staff Attendance Records.</p>
       </div>
       <a href="{{ url_for('admin.lms_dashboard') }}" class="btn btn-warning btn-lg text-dark fw-bold mt-3 mt-md-0 px-4 shadow">
-        <i class="fa-solid fa-pen-to-square me-2"></i> Open Control Center
+        <i class="fa-solid fa-pen-to-square me-2"></i> Open LMS Control Center
       </a>
     </div>
   </div>
 
-  <!-- Additional Control Buttons -->
-  <div class="card card-custom p-3 mb-4 bg-light border">
-    <div class="d-flex gap-2 flex-wrap">
-      <a href="{{ url_for('admin.users') }}" class="btn btn-primary fw-bold"><i class="fa-solid fa-user-gear me-1"></i> User Accounts & Roles</a>
-      <a href="{{ url_for('admin.lms_dashboard') }}" class="btn btn-success fw-bold"><i class="fa-solid fa-file-pdf me-1"></i> Approved Student List & PDF Bulk Import</a>
-      <a href="{{ url_for('admin.contact_messages') }}" class="btn btn-outline-primary fw-bold"><i class="fa-solid fa-envelope me-1"></i> View Contact Submissions ({{ unread_messages }})</a>
-      <a href="{{ url_for('admin.settings') }}" class="btn btn-outline-secondary fw-bold"><i class="fa-solid fa-sliders me-1"></i> Hostel Settings</a>
+  <!-- Quick Action Navigation Modules Grid (Consistent Slate Theme) -->
+  <h5 class="fw-bold text-white mb-3"><i class="fa-solid fa-cubes text-info me-2"></i> Quick Administrative Operations</h5>
+  
+  <div class="row g-3 mb-4">
+    <div class="col-md-3 col-6">
+      <a href="{{ url_for('admin.lms_dashboard', active_tab='students') }}" class="text-decoration-none">
+        <div class="card admin-card-dark p-3 text-center h-100">
+          <i class="fa-solid fa-user-check text-primary fs-2 mb-2"></i>
+          <h6 class="fw-bold text-white mb-1">Approved Student List</h6>
+          <span class="small text-slate-400" style="color: #94a3b8;">Add, Edit & PDF Import</span>
+        </div>
+      </a>
+    </div>
+
+    <div class="col-md-3 col-6">
+      <a href="{{ url_for('warden.rooms') }}" class="text-decoration-none">
+        <div class="card admin-card-dark p-3 text-center h-100">
+          <i class="fa-solid fa-bed text-warning fs-2 mb-2"></i>
+          <h6 class="fw-bold text-white mb-1">Room Allocation</h6>
+          <span class="small text-slate-400" style="color: #94a3b8;">Assign & Sort Rooms</span>
+        </div>
+      </a>
+    </div>
+
+    <div class="col-md-3 col-6">
+      <a href="{{ url_for('admin.snacks_attendance') }}" class="text-decoration-none">
+        <div class="card admin-card-dark p-3 text-center h-100">
+          <i class="fa-solid fa-cookie-bite text-warning fs-2 mb-2"></i>
+          <h6 class="fw-bold text-white mb-1">Daily Snacks Attendance</h6>
+          <span class="small text-slate-400" style="color: #94a3b8;">Checkbox Attendance</span>
+        </div>
+      </a>
+    </div>
+
+    <div class="col-md-3 col-6">
+      <a href="{{ url_for('admin.leaves') }}" class="text-decoration-none">
+        <div class="card admin-card-dark p-3 text-center h-100">
+          <i class="fa-solid fa-file-signature text-danger fs-2 mb-2"></i>
+          <h6 class="fw-bold text-white mb-1">Leave Management</h6>
+          <span class="small text-slate-400" style="color: #94a3b8;">Approve & Sick Records</span>
+        </div>
+      </a>
+    </div>
+
+    <div class="col-md-3 col-6">
+      <a href="{{ url_for('admin.history_reports') }}" class="text-decoration-none">
+        <div class="card admin-card-dark p-3 text-center h-100">
+          <i class="fa-solid fa-calendar-days text-info fs-2 mb-2"></i>
+          <h6 class="fw-bold text-white mb-1">Daily & Monthly History</h6>
+          <span class="small text-slate-400" style="color: #94a3b8;">Date-wise Records & Reports</span>
+        </div>
+      </a>
+    </div>
+
+    <div class="col-md-3 col-6">
+      <a href="{{ url_for('warden.cleaning_management') }}" class="text-decoration-none">
+        <div class="card admin-card-dark p-3 text-center h-100">
+          <i class="fa-solid fa-broom text-success fs-2 mb-2"></i>
+          <h6 class="fw-bold text-white mb-1">Daily Room Cleaning</h6>
+          <span class="small text-slate-400" style="color: #94a3b8;">Cleaning Checkbook</span>
+        </div>
+      </a>
+    </div>
+
+    <div class="col-md-3 col-6">
+      <a href="{{ url_for('admin.users') }}" class="text-decoration-none">
+        <div class="card admin-card-dark p-3 text-center h-100">
+          <i class="fa-solid fa-users-gear text-primary fs-2 mb-2"></i>
+          <h6 class="fw-bold text-white mb-1">User Accounts</h6>
+          <span class="small text-slate-400" style="color: #94a3b8;">Manage Passwords & Roles</span>
+        </div>
+      </a>
+    </div>
+
+    <div class="col-md-3 col-6">
+      <a href="{{ url_for('admin.settings') }}" class="text-decoration-none">
+        <div class="card admin-card-dark p-3 text-center h-100">
+          <i class="fa-solid fa-sliders text-secondary fs-2 mb-2"></i>
+          <h6 class="fw-bold text-white mb-1">System Settings</h6>
+          <span class="small text-slate-400" style="color: #94a3b8;">Hostel Rules & Config</span>
+        </div>
+      </a>
+    </div>
+  </div>
+
+  <!-- Additional Management Quick Links Bar -->
+  <div class="card admin-card-dark p-3 mb-4">
+    <div class="d-flex gap-2 flex-wrap justify-content-center">
+      <a href="{{ url_for('admin.contact_messages') }}" class="btn btn-outline-info btn-sm fw-bold"><i class="fa-solid fa-envelope me-1"></i> Contact Messages ({{ unread_messages }})</a>
+      <a href="{{ url_for('warden.complaints') }}" class="btn btn-outline-danger btn-sm fw-bold"><i class="fa-solid fa-headset me-1"></i> Complaints Management</a>
+      <a href="{{ url_for('public.mess') }}" target="_blank" class="btn btn-outline-warning btn-sm fw-bold"><i class="fa-solid fa-utensils me-1"></i> Public Mess Menu</a>
+      <a href="{{ url_for('admin.lms_dashboard', active_tab='staff') }}" class="btn btn-outline-success btn-sm fw-bold"><i class="fa-solid fa-clipboard-user me-1"></i> Staff Attendance Register</a>
     </div>
   </div>
 </div>

@@ -205,6 +205,7 @@
                 <th>Email</th>
                 <th>Department</th>
                 <th>Semester</th>
+                <th>Room Number</th>
                 <th>Registration Status</th>
                 <th>Registration Date</th>
                 <th class="text-end">Actions</th>
@@ -212,12 +213,13 @@
             </thead>
             <tbody>
               {% for s in approved_students %}
-              <tr class="stu-row" data-roll="{{ s.roll_number }}" data-name="{{ s.full_name }}" data-email="{{ s.email }}" data-dept="{{ s.department }}" data-sem="{{ s.semester }}" data-status="{% if s.is_registered %}Registered & Active{% else %}Not Registered Yet{% endif %}">
+              <tr class="stu-row" data-roll="{{ s.roll_number }}" data-name="{{ s.full_name }}" data-email="{{ s.email }}" data-dept="{{ s.department }}" data-sem="{{ s.semester }}" data-room="{{ s.room_number or '' }}" data-status="{% if s.is_registered %}Registered & Active{% else %}Not Registered Yet{% endif %}">
                 <td class="fw-bold text-primary">{{ s.roll_number }}</td>
                 <td class="fw-semibold text-dark">{{ s.full_name }}</td>
                 <td>{{ s.email }}</td>
                 <td><span class="badge bg-secondary">{{ s.department }}</span></td>
                 <td><span class="badge bg-info text-dark">Sem {{ s.semester }}</span></td>
+                <td><span class="badge bg-light text-dark border"><i class="fa-solid fa-bed me-1 text-primary"></i> {{ s.room_number or '101' }}</span></td>
                 <td>
                   {% if s.is_registered %}
                     <span class="badge bg-success"><i class="fa-solid fa-check me-1"></i> Registered & Active</span>
@@ -245,7 +247,7 @@
               </tr>
               {% else %}
               <tr>
-                <td colspan="8" class="text-center text-muted py-4">No approved students added yet. Click <strong>Add Approved Student</strong> or <strong>Bulk Import</strong>.</td>
+                <td colspan="9" class="text-center text-muted py-4">No approved students added yet. Click <strong>Add Approved Student</strong> or <strong>Bulk Import</strong>.</td>
               </tr>
               {% endfor %}
             </tbody>

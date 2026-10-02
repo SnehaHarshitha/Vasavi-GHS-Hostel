@@ -1,146 +1,179 @@
 {% extends "base.html" %}
 
-{% block title %}Sick Leave & Hostel Stay Request - PG Hostel Mess{% endblock %}
+{% block title %}Apply for Leave - Student Portal{% endblock %}
 
 {% block content %}
-<div class="container py-4">
-  <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
-    <div>
-      <h2 class="fw-bold text-primary mb-1"><i class="fa-solid fa-notes-medical me-2 text-danger"></i> Sick Leave & Hostel Stay Request</h2>
-      <p class="text-muted mb-0">Submit a sick leave request to stay in hostel and notify Warden & Principal.</p>
-    </div>
-    <span class="badge bg-primary fs-6 px-3 py-2"><i class="fa-solid fa-calendar me-1"></i> Today: {{ today_str }}</span>
-  </div>
+<div class="container py-4 py-md-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-9">
+      
+      <!-- Apply for Leave Form Card -->
+      <div class="card card-custom p-4 p-md-5 border-0 shadow-lg mb-5">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 pb-3 border-bottom">
+          <div>
+            <span class="badge bg-danger px-3 py-1 text-white text-uppercase fw-bold mb-2">Student Leave Desk</span>
+            <h3 class="fw-bold text-primary mb-0"><i class="fa-solid fa-file-pen me-2 text-warning"></i> Apply for Leave</h3>
+          </div>
+          <a href="{{ url_for('student.dashboard') }}" class="btn btn-outline-secondary btn-sm mt-2 mt-md-0"><i class="fa-solid fa-arrow-left me-1"></i> Dashboard</a>
+        </div>
 
-  <div class="row g-4">
-    <!-- Request Form -->
-    <div class="col-md-5">
-      <div class="card card-custom p-4 border-0 shadow-sm">
-        <h4 class="fw-bold text-dark mb-3"><i class="fa-solid fa-file-medical me-2 text-primary"></i> Apply for Sick Leave</h4>
-        
-        <form method="POST" action="{{ url_for('student.sick_leave') }}">
-          <div class="row g-2 mb-3">
-            <div class="col-6">
-              <label class="form-label fw-semibold">Start Date</label>
+        <form method="POST" action="{{ url_for('student.sick_leave') }}" enctype="multipart/form-data" id="leaveApplicationForm">
+          <div class="row g-3">
+            
+            <!-- Auto Retrieved Student Information (Disabled/Read-only) -->
+            <div class="col-12 bg-light p-3 rounded border mb-2">
+              <h6 class="fw-bold text-muted mb-2"><i class="fa-solid fa-id-card me-2 text-primary"></i> Authenticated Student Details (Auto-retrieved)</h6>
+              <div class="row g-2 small">
+                <div class="col-md-4"><strong>Student Name:</strong> <span class="text-primary fw-bold">{{ current_user.full_name }}</span></div>
+                <div class="col-md-4"><strong>Role Number:</strong> <span class="text-primary fw-bold">{{ current_user.role_number }}</span></div>
+                <div class="col-md-4"><strong>Room Number:</strong> <span class="text-primary fw-bold">{{ current_user.room_number or '101' }}</span></div>
+                <div class="col-md-6"><strong>Department:</strong> {{ current_user.department }}</div>
+                <div class="col-md-6"><strong>Year / Semester:</strong> {{ current_user.year }}</div>
+              </div>
+            </div>
+
+            <!-- Leave Type -->
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Leave Type <span class="text-danger">*</span></label>
+              <select name="leave_type" class="form-select fw-semibold text-primary" required>
+                {% for lt in leave_types %}
+                  <option value="{{ lt }}">{{ lt }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <!-- Reason Category -->
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Reason Category <span class="text-danger">*</span></label>
+              <select name="reason" class="form-select" required>
+                {% for r in reasons %}
+                  <option value="{{ r }}">{{ r }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <!-- Leave Start Date -->
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Leave Start Date <span class="text-danger">*</span></label>
               <input type="date" name="start_date" class="form-control" value="{{ today_str }}" required>
             </div>
-            <div class="col-6">
-              <label class="form-label fw-semibold">End Date</label>
+
+            <!-- Leave End Date -->
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Leave End Date <span class="text-danger">*</span></label>
               <input type="date" name="end_date" class="form-control" value="{{ today_str }}" required>
             </div>
-          </div>
 
-          <div class="mb-3">
-            <label class="form-label fw-semibold">Illness / Reason</label>
-            <select name="reason" class="form-select" required>
-              {% for r in reasons %}
-                <option value="{{ r }}">{{ r }}</option>
-              {% endfor %}
-            </select>
-          </div>
+            <!-- Parent Contact Information -->
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Parent / Guardian Name <span class="text-danger">*</span></label>
+              <input type="text" name="parent_name" class="form-control" placeholder="Parent or Guardian Full Name" value="{{ current_user.parent_name or '' }}" required>
+            </div>
 
-          <div class="mb-3">
-            <label class="form-label fw-semibold">Symptoms & Additional Details</label>
-            <textarea name="symptoms" class="form-control" rows="3" placeholder="Describe symptoms (e.g. high fever, body pain, prescribed rest by medical officer)..."></textarea>
-          </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Parent / Guardian Contact Number <span class="text-danger">*</span></label>
+              <input type="tel" name="parent_phone" class="form-control" placeholder="+91 9876543210" value="{{ current_user.parent_phone or '' }}" required>
+            </div>
 
-          <div class="form-check form-switch mb-3">
-            <input class="form-check-input" type="checkbox" name="staying_in_hostel" id="stayHostel" checked value="1">
-            <label class="form-check-label fw-semibold text-dark" for="stayHostel">
-              <i class="fa-solid fa-bed text-primary me-1"></i> Staying in Hostel during leave
-            </label>
-            <div class="form-text small">Confirming that you are remaining inside the hostel room for rest.</div>
-          </div>
+            <!-- Address During Leave -->
+            <div class="col-12">
+              <label class="form-label fw-semibold">Address During Leave <span class="text-danger">*</span></label>
+              <input type="text" name="address_during_leave" class="form-control" placeholder="Full residential or stay address during leave period" required>
+            </div>
 
-          <div class="form-check form-switch mb-4">
-            <input class="form-check-input" type="checkbox" name="request_sick_diet" id="sickDiet" value="1">
-            <label class="form-check-label fw-semibold text-dark" for="sickDiet">
-              <i class="fa-solid fa-bowl-rice text-warning me-1"></i> Request Sick Diet from Mess
-            </label>
-            <div class="form-text small">Mess staff will prepare light food (bread, milk, rice porridge).</div>
-          </div>
+            <!-- Additional Remarks / Description -->
+            <div class="col-12">
+              <label class="form-label fw-semibold">Detailed Reason for Leave & Remarks <span class="text-danger">*</span></label>
+              <textarea name="remarks" class="form-control" rows="3" placeholder="Please provide detailed reason for leave..." required></textarea>
+            </div>
 
-          <button type="submit" class="btn btn-danger btn-lg w-100 fw-bold shadow">
-            <i class="fa-solid fa-paper-plane me-2"></i> Submit Request to Warden & Principal
-          </button>
+            <!-- Optional Supporting Document Upload -->
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Supporting Document (Optional PDF / Photo)</label>
+              <input type="file" name="supporting_document" class="form-control" accept=".pdf,.jpg,.jpeg,.png">
+              <div class="form-text small">Medical certificate, invitation, or parent note if available.</div>
+            </div>
+
+            <!-- Options Checkboxes -->
+            <div class="col-md-6 d-flex align-items-center">
+              <div class="form-check me-4">
+                <input class="form-check-input" type="checkbox" name="staying_in_hostel" id="staying_in_hostel">
+                <label class="form-check-label small fw-semibold" for="staying_in_hostel">Staying in Hostel Room</label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="request_sick_diet" id="request_sick_diet">
+                <label class="form-check-label small fw-semibold text-danger" for="request_sick_diet">Request Sick Diet (Bread/Ganji)</label>
+              </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="col-12 mt-4 d-flex gap-3">
+              <button type="submit" class="btn btn-warning btn-lg text-dark fw-bold px-4 shadow">
+                <i class="fa-solid fa-paper-plane me-2"></i> Submit Leave Application
+              </button>
+              <button type="reset" class="btn btn-outline-secondary btn-lg fw-semibold px-4">
+                <i class="fa-solid fa-rotate-left me-1"></i> Clear Form
+              </button>
+            </div>
+          </div>
         </form>
       </div>
-    </div>
 
-    <!-- Request History -->
-    <div class="col-md-7">
-      <div class="card card-custom p-4 border-0 shadow-sm h-100">
-        <h4 class="fw-bold text-dark mb-3"><i class="fa-solid fa-history me-2 text-secondary"></i> My Sick Leave History</h4>
-
-        {% if leave_requests %}
-          <div class="table-responsive">
-            <table class="table table-hover align-middle">
-              <thead class="table-light">
-                <tr>
-                  <th>Dates</th>
-                  <th>Reason</th>
-                  <th>Hostel Stay</th>
-                  <th>Sick Diet</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for item in leave_requests %}
-                  <tr>
-                    <td class="small fw-semibold">
-                      {{ item.start_date }}
-                      {% if item.end_date != item.start_date %}
-                        <br><span class="text-muted">to {{ item.end_date }}</span>
-                      {% endif %}
-                    </td>
-                    <td>
-                      <span class="fw-bold text-dark d-block">{{ item.reason }}</span>
-                      {% if item.symptoms %}
-                        <span class="small text-muted d-block text-truncate" style="max-width: 150px;">{{ item.symptoms }}</span>
-                      {% endif %}
-                    </td>
-                    <td>
-                      {% if item.staying_in_hostel %}
-                        <span class="badge bg-info text-dark"><i class="fa-solid fa-house me-1"></i> Hostel Stay</span>
-                      {% else %}
-                        <span class="badge bg-secondary">Home Visit</span>
-                      {% endif %}
-                    </td>
-                    <td>
-                      {% if item.request_sick_diet %}
-                        <span class="badge bg-warning text-dark"><i class="fa-solid fa-check me-1"></i> Yes</span>
-                      {% else %}
-                        <span class="badge bg-light text-muted">No</span>
-                      {% endif %}
-                    </td>
-                    <td>
-                      {% if item.status == 'Approved by Warden' or item.status == 'Approved by Principal' %}
-                        <span class="badge bg-success"><i class="fa-solid fa-circle-check me-1"></i> {{ item.status }}</span>
-                      {% elif item.status == 'Rejected' %}
-                        <span class="badge bg-danger"><i class="fa-solid fa-circle-xmark me-1"></i> Rejected</span>
-                      {% else %}
-                        <span class="badge bg-warning text-dark"><i class="fa-solid fa-clock me-1"></i> Pending Review</span>
-                      {% endif %}
-                      {% if item.warden_remarks %}
-                        <div class="small text-muted mt-1">Warden: {{ item.warden_remarks }}</div>
-                      {% endif %}
-                      {% if item.principal_remarks %}
-                        <div class="small text-muted mt-1">Principal: {{ item.principal_remarks }}</div>
-                      {% endif %}
-                    </td>
-                  </tr>
-                {% endfor %}
-              </tbody>
-            </table>
-          </div>
-        {% else %}
-          <div class="alert alert-light text-center py-5">
-            <i class="fa-solid fa-notes-medical fs-1 text-muted d-block mb-2"></i>
-            <h5 class="fw-bold text-muted">No Sick Leave Requests Yet</h5>
-            <p class="small text-muted mb-0">Apply using the form when you are unwell and staying back in the hostel.</p>
-          </div>
-        {% endif %}
+      <!-- Submitted Leave Applications History -->
+      <div class="card card-custom p-4 border-0 shadow">
+        <h5 class="fw-bold text-primary mb-3"><i class="fa-solid fa-history me-2 text-warning"></i> My Submitted Leave History & Status</h5>
+        <div class="table-responsive">
+          <table class="table table-hover align-middle">
+            <thead class="table-light">
+              <tr>
+                <th>Leave ID</th>
+                <th>Type</th>
+                <th>Dates</th>
+                <th>Reason</th>
+                <th>Status</th>
+                <th>Warden/Principal Remarks</th>
+                <th>Document</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for r in leave_requests %}
+              <tr>
+                <td class="fw-bold text-primary">{{ r.leave_id or ('LV-' ~ r._id|string) }}</td>
+                <td><span class="badge bg-purple text-white" style="background:#6b21a8;">{{ r.leave_type or 'Sick Leave' }}</span></td>
+                <td class="small fw-semibold text-dark">{{ r.start_date }} to {{ r.end_date }}</td>
+                <td class="small text-muted">{{ r.reason }}</td>
+                <td>
+                  {% if 'Approved' in r.status %}
+                    <span class="badge bg-success"><i class="fa-solid fa-check me-1"></i> {{ r.status }}</span>
+                  {% elif r.status == 'Rejected' %}
+                    <span class="badge bg-danger"><i class="fa-solid fa-xmark me-1"></i> Rejected</span>
+                  {% else %}
+                    <span class="badge bg-warning text-dark"><i class="fa-solid fa-clock me-1"></i> Pending Approval</span>
+                  {% endif %}
+                </td>
+                <td class="small text-dark fst-italic">
+                  {% if r.warden_remarks or r.principal_remarks %}
+                    {{ r.warden_remarks }} {{ r.principal_remarks }}
+                  {% else %}
+                    <span class="text-muted">—</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if r.supporting_document %}
+                    <a href="{{ r.supporting_document }}" target="_blank" class="btn btn-sm btn-outline-info"><i class="fa-solid fa-paperclip"></i> View</a>
+                  {% else %}
+                    <span class="text-muted">—</span>
+                  {% endif %}
+                </td>
+              </tr>
+              {% else %}
+              <tr><td colspan="7" class="text-center text-muted py-4">No leave applications submitted yet.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
       </div>
+
     </div>
   </div>
 </div>

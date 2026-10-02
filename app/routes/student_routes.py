@@ -100,23 +100,85 @@ def food_selection():
         history=history
     )
 
-@student_bp.route('/cleaning-status')
+@student_bp.route('/cleaning-status', methods=['GET', 'POST'])
 @login_required
 def cleaning_status():
     if not student_only():
         return redirect(url_for('public.index'))
 
     today_str = datetime.now().strftime('%Y-%m-%d')
-    today_record = CleaningModel.get_room_cleaning(current_user.room_number, today_str)
-    history = CleaningModel.get_room_cleaning_history(current_user.room_number)
+    room_no = current_user.room_number or '101'
+
+    if request.method == 'POST':
+        category = request.form.get('category', 'Room Not Cleaned').strip()
+        description = request.form.get('description', '').strip()
+
+        # Photo upload if provided
+        attachment = ""
+        if 'photo' in request.files:
+            file = request.files['photo']
+            if file and file.filename:
+                import os
+                from werkzeug.utils import secure_filename
+                filename = secure_filename(f"clean_{current_user.role_number}_{datetime.now().strftime('%Y%m%d%H%M%S')}_{file.filename}")
+                upload_folder = os.path.join(current_app.root_path, 'static', 'uploads', 'cleaning')
+                os.makedirs(upload_folder, exist_ok=True)
+                file_path = os.path.join(upload_folder, filename)
+                file.save(file_path)
+                attachment = f"/static/uploads/cleaning/{filename}"
+
+        if description:
+            ComplaintModel.create_complaint(
+                student_id=current_user.id,
+                role_number=current_user.role_number,
+                room_number=room_no,
+                category='Room cleaning',
+                subject=f"Cleaning Issue: {category}",
+                description=description,
+                priority='High',
+                attachment=attachment
+            )
+            # Update room cleaning status to 'Problem Reported'
+            db = get_db()
+            if db is not None:
+                db.cleaning_records.update_one(
+                    {'room_number': room_no, 'date': today_str},
+                    {'$set': {'status': 'Problem Reported', 'remarks': f"Problem Reported: {description}"}},
+                    upsert=True
+                )
+
+            # Notify Warden
+            NotificationModel.create_notification(
+                title="Cleaning Complaint Submitted",
+                message=f"Student {current_user.full_name} (Room {room_no}) submitted a cleaning complaint: {description}",
+                target_type="warden",
+                created_by=current_user.full_name
+            )
+
+            flash("Your Cleaning Complaint Has Been Submitted Successfully!", "swal_success")
+            return redirect(url_for('student.cleaning_status'))
+        else:
+            flash("Please enter a description for the cleaning complaint.", "danger")
+
+    today_record = CleaningModel.get_room_cleaning(room_no, today_str)
+    history = CleaningModel.get_room_cleaning_history(room_no)
     sunday_tasks = CleaningModel.get_all_sunday_tasks()
+
+    db = get_db()
+    cleaning_complaints = []
+    if db is not None:
+        cleaning_complaints = list(db.complaints.find({
+            'role_number': current_user.role_number,
+            'category': 'Room cleaning'
+        }).sort('created_at', -1))
 
     return render_template(
         'student/cleaning.html',
         today_str=today_str,
         today_record=today_record,
         history=history,
-        sunday_tasks=sunday_tasks
+        sunday_tasks=sunday_tasks,
+        cleaning_complaints=cleaning_complaints
     )
 
 @student_bp.route('/complaints', methods=['GET', 'POST'])
@@ -224,42 +286,73 @@ def sick_leave():
     today_str = datetime.now().strftime('%Y-%m-%d')
 
     if request.method == 'POST':
+        leave_type = request.form.get('leave_type', 'Sick Leave').strip()
         start_date = request.form.get('start_date', today_str).strip()
         end_date = request.form.get('end_date', start_date).strip()
-        reason = request.form.get('reason', 'Fever / Flu').strip()
+        reason = request.form.get('reason', '').strip()
+        parent_name = request.form.get('parent_name', '').strip()
+        parent_phone = request.form.get('parent_phone', '').strip()
+        address_during_leave = request.form.get('address_during_leave', '').strip()
+        remarks = request.form.get('remarks', '').strip()
         symptoms = request.form.get('symptoms', '').strip()
         request_sick_diet = bool(request.form.get('request_sick_diet'))
-        staying_in_hostel = bool(request.form.get('staying_in_hostel', True))
+        staying_in_hostel = bool(request.form.get('staying_in_hostel'))
 
-        if start_date and reason:
-            SickLeaveModel.create_request(
+        # File upload
+        supporting_document = ""
+        if 'supporting_document' in request.files:
+            file = request.files['supporting_document']
+            if file and file.filename:
+                import os
+                from werkzeug.utils import secure_filename
+                filename = secure_filename(f"{current_user.role_number}_{datetime.now().strftime('%Y%m%d%H%M%S')}_{file.filename}")
+                upload_folder = os.path.join(current_app.root_path, 'static', 'uploads', 'leaves')
+                os.makedirs(upload_folder, exist_ok=True)
+                file_path = os.path.join(upload_folder, filename)
+                file.save(file_path)
+                supporting_document = f"/static/uploads/leaves/{filename}"
+
+        if start_date and end_date and reason:
+            leave_id = SickLeaveModel.create_request(
                 student_id=current_user.id,
                 student_name=current_user.full_name,
                 role_number=current_user.role_number,
-                room_number=current_user.room_number or 'Unassigned',
+                room_number=current_user.room_number or '101',
                 start_date=start_date,
                 end_date=end_date,
                 reason=reason,
+                leave_type=leave_type,
+                department=current_user.department or 'CSE',
+                semester=getattr(current_user, 'semester', '5'),
+                parent_name=parent_name or current_user.parent_name,
+                parent_phone=parent_phone or current_user.parent_phone,
+                address_during_leave=address_during_leave,
+                remarks=remarks,
                 symptoms=symptoms,
                 request_sick_diet=request_sick_diet,
-                staying_in_hostel=staying_in_hostel
+                staying_in_hostel=staying_in_hostel,
+                supporting_document=supporting_document
             )
-            # Notify Warden & Principal
+
+            # Create notification for Warden, Admin, Principal
+            notif_msg = f"New {leave_type} Application ({leave_id}) submitted by {current_user.full_name} ({current_user.role_number}) Room {current_user.room_number or '101'}."
             NotificationModel.create_notification(
-                title="New Sick Leave Request",
-                message=f"Student {current_user.full_name} (Room {current_user.room_number}) submitted a Sick Leave Request ({reason}) staying in hostel.",
-                target_type="warden",
+                title=f"New {leave_type} Application",
+                message=notif_msg,
+                target_type="all",
                 created_by=current_user.full_name
             )
-            flash('Sick leave request submitted successfully! Warden & Principal have been notified.', 'success')
+
+            flash(f'Your Leave Application ({leave_id}) Has Been Submitted Successfully!', 'swal_success')
             return redirect(url_for('student.sick_leave'))
         else:
-            flash('Please fill in required fields.', 'danger')
+            flash('Please fill in all required fields (Dates and Reason).', 'danger')
 
     leave_requests = SickLeaveModel.get_student_requests(current_user.id)
     return render_template(
         'student/sick_leave.html',
         today_str=today_str,
+        leave_types=SickLeaveModel.LEAVE_TYPES,
         reasons=SickLeaveModel.REASONS,
         leave_requests=leave_requests
     )

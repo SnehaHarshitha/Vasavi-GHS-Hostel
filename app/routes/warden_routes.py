@@ -5,11 +5,13 @@ import csv
 import io
 from app.models.user_model import UserModel
 from app.models.room_model import RoomModel
-from app.models.mess_model import MessModel
+from app.models.mess_model import MessModel, SnacksAttendanceModel
 from app.models.cleaning_model import CleaningModel
 from app.models.complaint_model import ComplaintModel
 from app.models.notification_model import NotificationModel
 from app.models.sick_leave_model import SickLeaveModel
+from app.models.lms_model import LMSModel
+from app.extensions import get_db
 
 warden_bp = Blueprint('warden', __name__, url_prefix='/warden')
 
@@ -152,8 +154,146 @@ def rooms():
             flash(f'Room {room_number} created successfully.', 'success')
         return redirect(url_for('warden.rooms'))
 
+    sort_by = request.args.get('sort_by', 'room_asc')
+    filter_floor = request.args.get('floor', '')
+    filter_dept = request.args.get('dept', '')
+    search_q = request.args.get('search', '').strip().lower()
+
     all_rooms = RoomModel.get_all_rooms()
-    return render_template('warden/rooms.html', rooms=all_rooms)
+    approved_students = LMSModel.get_approved_students()
+
+    # Apply Floor Filter to rooms
+    if filter_floor:
+        all_rooms = [r for r in all_rooms if r.get('floor') == filter_floor]
+
+    # Process student list
+    student_list = []
+    for s in approved_students:
+        s_roll = s.get('roll_number', '')
+        s_name = s.get('full_name', '')
+        s_room = s.get('room_number', '101')
+        s_dept = s.get('department', 'CSE')
+
+        if filter_dept and s_dept != filter_dept:
+            continue
+        if search_q and (search_q not in s_name.lower() and search_q not in s_roll.lower() and search_q not in str(s_room).lower()):
+            continue
+
+        student_list.append({
+            'id': str(s.get('_id')),
+            'roll_number': s_roll,
+            'full_name': s_name,
+            'room_number': str(s_room),
+            'department': s_dept,
+            'semester': s.get('semester', '5'),
+            'is_registered': s.get('is_registered', False)
+        })
+
+    # Sorting options
+    if sort_by == 'room_asc':
+        student_list.sort(key=lambda x: (x['room_number'], x['full_name']))
+        all_rooms.sort(key=lambda x: str(x.get('room_number', '')))
+    elif sort_by == 'room_desc':
+        student_list.sort(key=lambda x: (x['room_number'], x['full_name']), reverse=True)
+        all_rooms.sort(key=lambda x: str(x.get('room_number', '')), reverse=True)
+    elif sort_by == 'name_asc':
+        student_list.sort(key=lambda x: x['full_name'].lower())
+    elif sort_by == 'roll_asc':
+        student_list.sort(key=lambda x: x['roll_number'].lower())
+
+    # Group students by room number
+    grouped_students = {}
+    for st in student_list:
+        rm = st['room_number'] or 'Unassigned'
+        if rm not in grouped_students:
+            grouped_students[rm] = []
+        grouped_students[rm].append(st)
+
+    # History
+    db = get_db()
+    history = list(db.room_history.find().sort('timestamp', -1).limit(30)) if db is not None else []
+
+    return render_template(
+        'warden/rooms.html',
+        rooms=all_rooms,
+        student_list=student_list,
+        grouped_students=grouped_students,
+        history=history,
+        sort_by=sort_by,
+        filter_floor=filter_floor,
+        filter_dept=filter_dept,
+        search_q=search_q,
+        approved_students=approved_students
+    )
+
+
+@warden_bp.route('/allocate-room', methods=['POST'])
+@login_required
+def allocate_room():
+    if not warden_only():
+        return redirect(url_for('public.index'))
+
+    student_roll = request.form.get('student_roll', '').strip().upper()
+    new_room = request.form.get('room_number', '').strip()
+
+    if not student_roll or not new_room:
+        flash('Please select a student and target room number.', 'danger')
+        return redirect(url_for('warden.rooms'))
+
+    room = RoomModel.find_by_room_number(new_room)
+    if not room:
+        flash(f'Target Room {new_room} does not exist.', 'danger')
+        return redirect(url_for('warden.rooms'))
+
+    capacity = int(room.get('capacity', 4))
+    assigned = room.get('assigned_students', [])
+    if len(assigned) >= capacity:
+        already_in = any(s.get('role_number') == student_roll for s in assigned)
+        if not already_in:
+            flash(f'Cannot allocate beyond capacity! Room {new_room} is full ({capacity} beds maximum).', 'danger')
+            return redirect(url_for('warden.rooms'))
+
+    db = get_db()
+    user = UserModel.find_by_role_number(student_roll)
+    old_room = '101'
+
+    app_stu = LMSModel.find_approved_student(student_roll)
+    if app_stu:
+        old_room = app_stu.get('room_number', '101')
+        LMSModel.update_approved_student(app_stu['_id'], {'room_number': new_room})
+
+    student_name = app_stu.get('full_name', student_roll) if app_stu else (user.get('full_name', student_roll) if user else student_roll)
+
+    if user:
+        UserModel.update_user(user['_id'], {'room_number': new_room})
+
+    # Update room allocation in old room and new room
+    if old_room and old_room != new_room:
+        old_room_doc = RoomModel.find_by_room_number(old_room)
+        if old_room_doc:
+            updated_assigned = [s for s in old_room_doc.get('assigned_students', []) if s.get('role_number') != student_roll]
+            db.rooms.update_one({'_id': old_room_doc['_id']}, {'$set': {'assigned_students': updated_assigned, 'occupied_beds': len(updated_assigned)}})
+
+    if user:
+        RoomModel.assign_student(new_room, str(user['_id']), student_name, student_roll)
+    else:
+        if not any(s.get('role_number') == student_roll for s in assigned):
+            assigned.append({'student_id': '', 'student_name': student_name, 'role_number': student_roll})
+            db.rooms.update_one({'_id': room['_id']}, {'$set': {'assigned_students': assigned, 'occupied_beds': len(assigned)}})
+
+    # Record history
+    if db is not None:
+        db.room_history.insert_one({
+            'student_name': student_name,
+            'role_number': student_roll,
+            'old_room': old_room,
+            'new_room': new_room,
+            'allocated_by': current_user.full_name,
+            'timestamp': datetime.utcnow()
+        })
+
+    flash(f'Room {new_room} allocated successfully to {student_name} ({student_roll}).', 'success')
+    return redirect(url_for('warden.rooms'))
 
 @warden_bp.route('/mess-management', methods=['GET', 'POST'])
 @login_required
@@ -293,6 +433,93 @@ def sunday_tasks():
     tasks = CleaningModel.get_all_sunday_tasks()
     return render_template('warden/sunday_tasks.html', tasks=tasks)
 
+
+@warden_bp.route('/snacks-attendance', methods=['GET'])
+@login_required
+def snacks_attendance():
+    if not warden_only():
+        return redirect(url_for('public.index'))
+
+    date_str = request.args.get('date', datetime.now().strftime('%Y-%m-%d'))
+    filter_room = request.args.get('room', '')
+    filter_dept = request.args.get('dept', '')
+    search_q = request.args.get('search', '').strip().lower()
+
+    approved_students = LMSModel.get_approved_students()
+    existing_attendance = {a['role_number']: a for a in SnacksAttendanceModel.get_attendance_by_date(date_str)}
+    stats = SnacksAttendanceModel.get_attendance_stats(date_str)
+
+    student_records = []
+    for s in approved_students:
+        s_roll = s.get('roll_number', '')
+        s_name = s.get('full_name', '')
+        s_room = str(s.get('room_number', '101'))
+        s_dept = s.get('department', 'CSE')
+
+        if filter_room and s_room != filter_room:
+            continue
+        if filter_dept and s_dept != filter_dept:
+            continue
+        if search_q and (search_q not in s_name.lower() and search_q not in s_roll.lower() and search_q not in s_room.lower()):
+            continue
+
+        existing = existing_attendance.get(s_roll)
+        status = existing.get('status', 'Not Yet Marked') if existing else 'Not Yet Marked'
+
+        student_records.append({
+            'role_number': s_roll,
+            'full_name': s_name,
+            'room_number': s_room,
+            'department': s_dept,
+            'semester': s.get('semester', '5'),
+            'status': status,
+            'taken': (status == 'Taken'),
+            'recorded_by': existing.get('recorded_by', '—') if existing else '—',
+            'updated_at': existing.get('updated_at') if existing else None
+        })
+
+    all_rooms = RoomModel.get_all_rooms()
+
+    return render_template(
+        'warden/snacks_attendance.html',
+        date_str=date_str,
+        students=student_records,
+        stats=stats,
+        rooms=all_rooms,
+        filter_room=filter_room,
+        filter_dept=filter_dept,
+        search_q=search_q
+    )
+
+
+@warden_bp.route('/snacks-attendance/save', methods=['POST'])
+@login_required
+def snacks_attendance_save():
+    if not warden_only():
+        return redirect(url_for('public.index'))
+
+    date_str = request.form.get('date', datetime.now().strftime('%Y-%m-%d')).strip()
+    taken_roles = set(request.form.getlist('taken_students'))
+
+    approved_students = LMSModel.get_approved_students()
+    attendance_list = []
+
+    for s in approved_students:
+        roll = s.get('roll_number', '')
+        status = 'Taken' if roll in taken_roles else 'Not Taken'
+        attendance_list.append({
+            'role_number': roll,
+            'full_name': s.get('full_name', ''),
+            'room_number': s.get('room_number', '101'),
+            'department': s.get('department', 'CSE'),
+            'status': status
+        })
+
+    count = SnacksAttendanceModel.save_attendance(date_str, attendance_list, recorded_by=current_user.full_name)
+    flash("Daily Snacks Attendance Saved Successfully!", "swal_success")
+    return redirect(url_for('warden.snacks_attendance', date=date_str))
+
+
 @warden_bp.route('/complaints', methods=['GET', 'POST'])
 @login_required
 def complaints():
@@ -401,6 +628,9 @@ def sick_leaves():
         return redirect(url_for('public.index'))
 
     status_filter = request.args.get('status', 'all')
+    leave_type_filter = request.args.get('leave_type', 'all')
+    filter_dept = request.args.get('dept', '')
+    search_q = request.args.get('search', '').strip().lower()
 
     if request.method == 'POST':
         request_id = request.form.get('request_id')
@@ -408,26 +638,39 @@ def sick_leaves():
         remarks = request.form.get('warden_remarks', '').strip()
 
         if request_id and new_status:
-            SickLeaveModel.update_status(request_id, new_status, remarks, reviewer_role="Warden")
+            SickLeaveModel.update_status(request_id, new_status, remarks, reviewer_role="Warden", reviewer_name=current_user.full_name)
             leave = SickLeaveModel.find_by_id(request_id)
             if leave:
+                l_type = leave.get('leave_type', 'Sick Leave')
+                s_date = leave.get('start_date', '')
+                e_date = leave.get('end_date', '')
+                notif_msg = f"Your {l_type} Application from {s_date} to {e_date} has been {new_status}."
+                if remarks:
+                    notif_msg += f" Remarks: {remarks}"
+                
                 NotificationModel.create_notification(
-                    title=f"Sick Leave Request {new_status}",
-                    message=f"Your Sick Leave Request ({leave.get('reason')}) has been updated to: {new_status}. Remarks: {remarks}",
+                    title=f"{l_type} Application {new_status}",
+                    message=notif_msg,
                     target_type="specific",
                     target_users=[str(leave.get('student_id')), leave.get('role_number')],
                     created_by=current_user.full_name
                 )
-            flash(f"Sick Leave status updated to '{new_status}'.", 'success')
-            return redirect(url_for('warden.sick_leaves', status=status_filter))
+            flash(f"Leave Application status updated to '{new_status}'.", 'swal_success')
+            return redirect(url_for('warden.sick_leaves', status=status_filter, leave_type=leave_type_filter))
 
-    leave_list = SickLeaveModel.get_all_requests(status=status_filter)
+    leave_list = SickLeaveModel.get_all_requests(status=status_filter, leave_type=leave_type_filter, department=filter_dept, search_q=search_q)
+    sick_leave_records = SickLeaveModel.get_sick_leave_records()
     stats = SickLeaveModel.get_stats()
 
     return render_template(
         'warden/sick_leaves.html',
         leave_list=leave_list,
+        sick_leave_records=sick_leave_records,
         stats=stats,
         status_filter=status_filter,
+        leave_type_filter=leave_type_filter,
+        filter_dept=filter_dept,
+        search_q=search_q,
+        show_sick_only=(leave_type_filter == 'Sick Leave'),
         statuses=SickLeaveModel.STATUSES
     )

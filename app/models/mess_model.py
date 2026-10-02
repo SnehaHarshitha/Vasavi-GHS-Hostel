@@ -162,3 +162,82 @@ class MessModel:
         if db is None:
             return []
         return list(db.food_selections.find({'date': date_str}))
+
+
+class SnacksAttendanceModel:
+    @staticmethod
+    def save_attendance(date_str, attendance_list, recorded_by="Admin"):
+        db = get_db()
+        if db is None:
+            return 0
+        now = datetime.utcnow()
+        count = 0
+        for item in attendance_list:
+            role_number = str(item.get('role_number', '')).strip().upper()
+            if not role_number:
+                continue
+            status = item.get('status', 'Not Taken')
+            full_name = item.get('full_name', '')
+            room_number = item.get('room_number', '101')
+            department = item.get('department', 'CSE')
+
+            db.snacks_attendance.update_one(
+                {'date': date_str, 'role_number': role_number},
+                {'$set': {
+                    'date': date_str,
+                    'role_number': role_number,
+                    'full_name': full_name,
+                    'room_number': room_number,
+                    'department': department,
+                    'status': status, # 'Taken' or 'Not Taken'
+                    'recorded_by': recorded_by,
+                    'updated_at': now
+                }},
+                upsert=True
+            )
+            count += 1
+        return count
+
+    @staticmethod
+    def get_attendance_by_date(date_str):
+        db = get_db()
+        if db is None:
+            return []
+        return list(db.snacks_attendance.find({'date': date_str}))
+
+    @staticmethod
+    def get_attendance_stats(date_str):
+        from app.models.lms_model import LMSModel
+        db = get_db()
+        approved_students = LMSModel.get_approved_students()
+        total_students = len(approved_students)
+
+        if db is None:
+            return {
+                'date': date_str,
+                'total_students': total_students,
+                'taken': 0,
+                'not_taken': 0,
+                'not_marked': total_students
+            }
+
+        taken_count = db.snacks_attendance.count_documents({'date': date_str, 'status': 'Taken'})
+        not_taken_count = db.snacks_attendance.count_documents({'date': date_str, 'status': 'Not Taken'})
+        marked_count = taken_count + not_taken_count
+        not_marked_count = max(0, total_students - marked_count)
+
+        return {
+            'date': date_str,
+            'total_students': total_students,
+            'taken': taken_count,
+            'not_taken': not_taken_count,
+            'not_marked': not_marked_count
+        }
+
+    @staticmethod
+    def get_student_history(role_number, limit=30):
+        db = get_db()
+        if db is None:
+            return []
+        return list(db.snacks_attendance.find({'role_number': str(role_number).strip().upper()}).sort('date', -1).limit(limit))
+

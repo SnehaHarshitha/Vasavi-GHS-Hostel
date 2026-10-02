@@ -1,0 +1,252 @@
+{% extends "base.html" %}
+
+{% block title %}Daily & Monthly History Reports - Admin Panel{% endblock %}
+
+{% block extra_css %}
+<style>
+  body {
+    background-color: #0f172a !important;
+    color: #f8fafc !important;
+  }
+  .card-admin-dark {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 14px;
+    color: #f8fafc;
+  }
+  .admin-table th {
+    background-color: #1e1b4b !important;
+    color: #93c5fd !important;
+    border-bottom: 2px solid #334155 !important;
+  }
+  .admin-table td {
+    border-color: #334155 !important;
+    color: #cbd5e1 !important;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4 px-lg-5">
+  <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 pb-2 border-bottom border-secondary">
+    <div>
+      <span class="badge bg-info text-dark px-3 py-1 text-uppercase fw-bold mb-1">Historical Audit System</span>
+      <h2 class="fw-bold text-white mb-0"><i class="fa-solid fa-calendar-days me-2 text-warning"></i> Daily & Monthly History Reports</h2>
+    </div>
+    <div class="mt-3 mt-md-0 d-flex gap-2 flex-wrap">
+      <button onclick="window.print()" class="btn btn-outline-info btn-sm fw-bold"><i class="fa-solid fa-file-pdf me-1"></i> Download PDF Report</button>
+      <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-arrow-left me-1"></i> Dashboard</a>
+    </div>
+  </div>
+
+  <!-- Search & Filter Controls Card -->
+  <div class="card card-admin-dark p-3 mb-4">
+    <form method="GET" action="{{ url_for('admin.history_reports') }}" class="row g-2 align-items-end">
+      <div class="col-md-3">
+        <label class="form-label fw-bold small text-slate-300 mb-1" style="color:#cbd5e1;"><i class="fa-solid fa-layer-group me-1 text-primary"></i> View Mode</label>
+        <select name="view_type" class="form-select form-select-sm bg-dark text-white border-secondary" onchange="this.form.submit()">
+          <option value="daily" {% if view_type == 'daily' %}selected{% endif %}>Single Day History</option>
+          <option value="monthly" {% if view_type == 'monthly' %}selected{% endif %}>Monthly Summary Breakdown</option>
+          <option value="custom" {% if view_type == 'custom' %}selected{% endif %}>Custom Date Range</option>
+        </select>
+      </div>
+
+      {% if view_type == 'monthly' %}
+        <div class="col-md-3">
+          <label class="form-label fw-bold small text-slate-300 mb-1" style="color:#cbd5e1;"><i class="fa-solid fa-calendar me-1 text-warning"></i> Select Month</label>
+          <input type="month" name="month" class="form-control form-control-sm bg-dark text-white border-secondary" value="{{ month_str }}" onchange="this.form.submit()">
+        </div>
+      {% elif view_type == 'custom' %}
+        <div class="col-md-3">
+          <label class="form-label fw-bold small text-slate-300 mb-1" style="color:#cbd5e1;">Start Date</label>
+          <input type="date" name="start_date" class="form-control form-control-sm bg-dark text-white border-secondary" value="{{ start_date }}">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label fw-bold small text-slate-300 mb-1" style="color:#cbd5e1;">End Date</label>
+          <input type="date" name="end_date" class="form-control form-control-sm bg-dark text-white border-secondary" value="{{ end_date }}">
+        </div>
+      {% else %}
+        <div class="col-md-3">
+          <label class="form-label fw-bold small text-slate-300 mb-1" style="color:#cbd5e1;"><i class="fa-solid fa-calendar-day me-1 text-success"></i> Select Specific Date</label>
+          <input type="date" name="date" class="form-control form-control-sm bg-dark text-white border-secondary" value="{{ date_str }}" onchange="this.form.submit()">
+        </div>
+      {% endif %}
+
+      <div class="col-md-3 d-flex gap-2">
+        <button type="submit" class="btn btn-primary btn-sm fw-bold w-100"><i class="fa-solid fa-magnifying-glass me-1"></i> Retrieve History</button>
+        <a href="{{ url_for('admin.history_reports') }}" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-rotate-left"></i></a>
+      </div>
+    </form>
+  </div>
+
+  {% if view_type == 'monthly' %}
+    <!-- MONTHLY HISTORY VIEW -->
+    <div class="card card-admin-dark p-4 mb-4">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="fw-bold text-white mb-0"><i class="fa-solid fa-calendar-check me-2 text-warning"></i> Monthly Summary Breakdown for {{ month_str }}</h5>
+        <div class="d-flex gap-2">
+          <span class="badge bg-primary fs-6">{{ monthly_cleaning_count }} Cleaning Logs</span>
+          <span class="badge bg-success fs-6">{{ monthly_snacks_count }} Snacks Logs</span>
+          <span class="badge bg-danger fs-6">{{ monthly_leaves_count }} Leave Applications</span>
+        </div>
+      </div>
+
+      <div class="table-responsive">
+        <table class="table table-hover align-middle admin-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Date</th>
+              <th>Rooms Cleaned Logs</th>
+              <th>Snacks Taken Count</th>
+              <th>Leave Applications</th>
+              <th class="text-end">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for date_key, summary in days_in_month.items() %}
+            <tr>
+              <td>{{ loop.index }}</td>
+              <td class="fw-bold text-info">{{ date_key }}</td>
+              <td><span class="badge bg-primary">{{ summary.cleaning }} Rooms</span></td>
+              <td><span class="badge bg-success">{{ summary.snacks_taken }} Students</span></td>
+              <td><span class="badge bg-danger">{{ summary.leaves }} Applications</span></td>
+              <td class="text-end">
+                <a href="{{ url_for('admin.history_reports', date=date_key, view_type='daily') }}" class="btn btn-sm btn-outline-info">
+                  <i class="fa-solid fa-eye me-1"></i> View Day Details
+                </a>
+              </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="6" class="text-center text-slate-400 py-4" style="color:#94a3b8;">No historical records stored for {{ month_str }}.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  {% else %}
+    <!-- DAILY HISTORY VIEW FOR date_str -->
+    <div class="row g-4">
+      
+      <!-- 1. Daily Room Cleaning -->
+      <div class="col-md-6">
+        <div class="card card-admin-dark p-4 h-100">
+          <h5 class="fw-bold text-white mb-3"><i class="fa-solid fa-broom text-success me-2"></i> Daily Room Cleaning ({{ date_str }})</h5>
+          <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle admin-table">
+              <thead>
+                <tr>
+                  <th>Room</th>
+                  <th>Status</th>
+                  <th>Checked By</th>
+                  <th>Time</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for c in cleaning_records %}
+                <tr>
+                  <td class="fw-bold text-warning">Room {{ c.room_number }}</td>
+                  <td>
+                    {% if c.status == 'Completed' %}
+                      <span class="badge bg-success">Completed</span>
+                    {% else %}
+                      <span class="badge bg-warning text-dark">{{ c.status or 'Pending' }}</span>
+                    {% endif %}
+                  </td>
+                  <td>{{ c.checked_by or 'Warden' }}</td>
+                  <td class="small text-slate-400" style="color:#94a3b8;">{{ c.check_time or '—' }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="4" class="text-center text-slate-400 py-3" style="color:#94a3b8;">No cleaning records stored for {{ date_str }}.</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. Daily Snacks Attendance -->
+      <div class="col-md-6">
+        <div class="card card-admin-dark p-4 h-100">
+          <h5 class="fw-bold text-white mb-3"><i class="fa-solid fa-cookie-bite text-warning me-2"></i> Daily Snacks Attendance ({{ date_str }})</h5>
+          <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle admin-table">
+              <thead>
+                <tr>
+                  <th>Role Number</th>
+                  <th>Student Name</th>
+                  <th>Room</th>
+                  <th>Attendance</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for s in snacks_records %}
+                <tr>
+                  <td class="fw-bold text-primary">{{ s.role_number }}</td>
+                  <td>{{ s.full_name }}</td>
+                  <td>Room {{ s.room_number }}</td>
+                  <td>
+                    {% if s.status == 'Taken' %}
+                      <span class="badge bg-success"><i class="fa-solid fa-check me-1"></i> Taken</span>
+                    {% else %}
+                      <span class="badge bg-danger"><i class="fa-solid fa-xmark me-1"></i> Not Taken</span>
+                    {% endif %}
+                  </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="4" class="text-center text-slate-400 py-3" style="color:#94a3b8;">No snacks attendance stored for {{ date_str }}.</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. Leave Applications for date_str -->
+      <div class="col-12">
+        <div class="card card-admin-dark p-4">
+          <h5 class="fw-bold text-white mb-3"><i class="fa-solid fa-file-signature text-danger me-2"></i> Leave & Sick Applications Log ({{ date_str }})</h5>
+          <div class="table-responsive">
+            <table class="table table-hover align-middle admin-table">
+              <thead>
+                <tr>
+                  <th>Leave ID</th>
+                  <th>Student Name</th>
+                  <th>Role Number</th>
+                  <th>Room</th>
+                  <th>Type</th>
+                  <th>Reason</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for l in leave_records %}
+                <tr>
+                  <td class="fw-bold text-primary">{{ l.leave_id or '—' }}</td>
+                  <td class="fw-semibold text-white">{{ l.student_name }}</td>
+                  <td>{{ l.role_number }}</td>
+                  <td>Room {{ l.room_number }}</td>
+                  <td><span class="badge bg-purple text-white" style="background:#6b21a8;">{{ l.leave_type or 'Sick Leave' }}</span></td>
+                  <td>{{ l.reason }}</td>
+                  <td>
+                    {% if 'Approved' in l.status %}
+                      <span class="badge bg-success">{{ l.status }}</span>
+                    {% else %}
+                      <span class="badge bg-warning text-dark">{{ l.status }}</span>
+                    {% endif %}
+                  </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="7" class="text-center text-slate-400 py-3" style="color:#94a3b8;">No leave applications recorded for {{ date_str }}.</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

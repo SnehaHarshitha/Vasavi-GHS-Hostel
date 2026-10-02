@@ -216,7 +216,8 @@ class LMSModel:
                 'email': cand_email,
                 'department': candidate.get('department', 'CSE'),
                 'semester': str(candidate.get('semester', '5')),
-                'phone': candidate.get('phone', '')
+                'phone': candidate.get('phone', ''),
+                'room_number': candidate.get('room_number', '101')
             }
         }
 

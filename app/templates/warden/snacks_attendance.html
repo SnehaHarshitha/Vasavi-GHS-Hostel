@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+
+{% block title %}Daily Snacks Attendance - Warden Desk{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4 px-lg-5">
+  <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 pb-2 border-bottom">
+    <div>
+      <h2 class="fw-bold text-primary mb-1"><i class="fa-solid fa-cookie-bite me-2 text-warning"></i> Daily Snacks Attendance System</h2>
+      <p class="text-muted mb-0">Record which hostel students have taken daily evening snacks. Database synced with MongoDB Atlas.</p>
+    </div>
+    <div class="mt-3 mt-md-0 d-flex gap-2">
+      <a href="{{ url_for('warden.dashboard') }}" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-arrow-left me-1"></i> Dashboard</a>
+      <button type="button" class="btn btn-outline-primary btn-sm fw-semibold" onclick="window.print()"><i class="fa-solid fa-print me-1"></i> Export Report</button>
+    </div>
+  </div>
+
+  <!-- Summary Cards Row (Dynamic Database Counts) -->
+  <div class="row g-3 mb-4">
+    <div class="col-md-3 col-6">
+      <div class="card card-custom p-3 border-start border-primary border-4 shadow-sm text-center">
+        <div class="small text-uppercase text-muted fw-bold">Total Registered Students</div>
+        <div class="fs-3 fw-bold text-primary mt-1">{{ stats.total_students }}</div>
+        <div class="small text-muted mt-1">Hostel Residents</div>
+      </div>
+    </div>
+    <div class="col-md-3 col-6">
+      <div class="card card-custom p-3 border-start border-success border-4 shadow-sm text-center">
+        <div class="small text-uppercase text-muted fw-bold">Snacks Taken</div>
+        <div class="fs-3 fw-bold text-success mt-1">{{ stats.taken }}</div>
+        <div class="small text-muted mt-1">Marked Taken</div>
+      </div>
+    </div>
+    <div class="col-md-3 col-6">
+      <div class="card card-custom p-3 border-start border-danger border-4 shadow-sm text-center">
+        <div class="small text-uppercase text-muted fw-bold">Snacks Not Taken</div>
+        <div class="fs-3 fw-bold text-danger mt-1">{{ stats.not_taken }}</div>
+        <div class="small text-muted mt-1">Marked Not Taken</div>
+      </div>
+    </div>
+    <div class="col-md-3 col-6">
+      <div class="card card-custom p-3 border-start border-warning border-4 shadow-sm text-center">
+        <div class="small text-uppercase text-muted fw-bold">Attendance Not Marked</div>
+        <div class="fs-3 fw-bold text-warning mt-1">{{ stats.not_marked }}</div>
+        <div class="small text-muted mt-1">Pending Marking</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filter & Action Controls -->
+  <div class="card card-custom p-3 shadow-sm mb-4 bg-light border">
+    <form method="GET" action="{{ url_for('warden.snacks_attendance') }}" class="row g-2 align-items-end">
+      <div class="col-md-3">
+        <label class="form-label fw-bold small text-muted mb-1"><i class="fa-solid fa-calendar me-1 text-primary"></i> Attendance Date</label>
+        <input type="date" name="date" class="form-control form-control-sm fw-bold" value="{{ date_str }}" onchange="this.form.submit()">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label fw-bold small text-muted mb-1"><i class="fa-solid fa-magnifying-glass me-1"></i> Search Student</label>
+        <input type="text" name="search" class="form-control form-control-sm" placeholder="Search by name or roll no..." value="{{ search_q or '' }}">
+      </div>
+      <div class="col-md-2 col-6">
+        <label class="form-label fw-bold small text-muted mb-1"><i class="fa-solid fa-door-closed me-1"></i> Room Number</label>
+        <select name="room" class="form-select form-select-sm" onchange="this.form.submit()">
+          <option value="">All Rooms</option>
+          {% for r in rooms %}
+            <option value="{{ r.room_number }}" {% if filter_room == r.room_number %}selected{% endif %}>Room {{ r.room_number }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2 col-6">
+        <label class="form-label fw-bold small text-muted mb-1"><i class="fa-solid fa-building me-1"></i> Department</label>
+        <select name="dept" class="form-select form-select-sm" onchange="this.form.submit()">
+          <option value="">All Departments</option>
+          <option value="CSE" {% if filter_dept == 'CSE' %}selected{% endif %}>CSE</option>
+          <option value="ECE" {% if filter_dept == 'ECE' %}selected{% endif %}>ECE</option>
+          <option value="EEE" {% if filter_dept == 'EEE' %}selected{% endif %}>EEE</option>
+          <option value="IT" {% if filter_dept == 'IT' %}selected{% endif %}>IT</option>
+          <option value="CIVIL" {% if filter_dept == 'CIVIL' %}selected{% endif %}>CIVIL</option>
+          <option value="MECHANICAL" {% if filter_dept == 'MECHANICAL' %}selected{% endif %}>MECHANICAL</option>
+          <option value="AI & ML" {% if filter_dept == 'AI & ML' %}selected{% endif %}>AI & ML</option>
+        </select>
+      </div>
+      <div class="col-md-2 d-flex gap-1">
+        <button type="submit" class="btn btn-primary btn-sm fw-bold w-100"><i class="fa-solid fa-filter me-1"></i> Filter</button>
+        <a href="{{ url_for('warden.snacks_attendance') }}" class="btn btn-outline-secondary btn-sm" title="Reset Filters"><i class="fa-solid fa-rotate-left"></i></a>
+      </div>
+    </form>
+  </div>
+
+  <!-- Form for Bulk Marking Attendance -->
+  <form method="POST" action="{{ url_for('warden.snacks_attendance_save') }}" id="snacksForm">
+    <input type="hidden" name="date" value="{{ date_str }}">
+
+    <div class="card card-custom p-4 shadow-sm mb-4">
+      <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-3 gap-2">
+        <h5 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-list-check text-warning me-2"></i> Attendance Register for {{ date_str }}</h5>
+        <div class="d-flex gap-2 flex-wrap">
+          <button type="button" class="btn btn-outline-success btn-sm fw-bold" onclick="selectAllSnacks(true)"><i class="fa-solid fa-square-check me-1"></i> Select All</button>
+          <button type="button" class="btn btn-outline-danger btn-sm fw-bold" onclick="selectAllSnacks(false)"><i class="fa-solid fa-square me-1"></i> Clear Selection</button>
+          <button type="submit" class="btn btn-success btn-sm fw-bold shadow"><i class="fa-solid fa-floppy-disk me-1"></i> Save Attendance</button>
+        </div>
+      </div>
+
+      <div class="table-responsive">
+        <table class="table table-hover align-middle" id="snacksTable">
+          <thead class="table-light">
+            <tr>
+              <th style="width: 50px;">Check</th>
+              <th>Roll Number</th>
+              <th>Student Name</th>
+              <th>Room Number</th>
+              <th>Department</th>
+              <th>Date</th>
+              <th>Snacks Attendance</th>
+              <th>Recorded By</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for s in students %}
+            <tr>
+              <td>
+                <input type="checkbox" name="taken_students" value="{{ s.role_number }}" class="form-check-input snacks-checkbox" style="width: 20px; height: 20px; cursor: pointer;" {% if s.taken %}checked{% endif %}>
+              </td>
+              <td class="fw-bold text-primary">{{ s.role_number }}</td>
+              <td class="fw-semibold text-dark">{{ s.full_name }}</td>
+              <td><span class="badge bg-warning text-dark"><i class="fa-solid fa-bed me-1"></i> Room {{ s.room_number }}</span></td>
+              <td><span class="badge bg-secondary">{{ s.department }}</span></td>
+              <td class="small text-muted">{{ date_str }}</td>
+              <td>
+                {% if s.status == 'Taken' %}
+                  <span class="badge bg-success"><i class="fa-solid fa-check me-1"></i> Taken</span>
+                {% elif s.status == 'Not Taken' %}
+                  <span class="badge bg-danger"><i class="fa-solid fa-xmark me-1"></i> Not Taken</span>
+                {% else %}
+                  <span class="badge bg-warning text-dark"><i class="fa-solid fa-clock me-1"></i> Not Yet Marked</span>
+                {% endif %}
+              </td>
+              <td class="small text-muted">{{ s.recorded_by }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="8" class="text-center text-muted py-4">No student records found for the selected filters.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="d-flex justify-content-end mt-3">
+        <button type="submit" class="btn btn-success fw-bold px-4 shadow"><i class="fa-solid fa-floppy-disk me-2"></i> Save Attendance</button>
+      </div>
+    </div>
+  </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  function selectAllSnacks(state) {
+    const checkboxes = document.querySelectorAll('.snacks-checkbox');
+    checkboxes.forEach(cb => cb.checked = state);
+  }
+</script>
+{% endblock %}

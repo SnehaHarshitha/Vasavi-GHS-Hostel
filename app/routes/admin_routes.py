@@ -8,10 +8,12 @@ from app.models.user_model import UserModel
 from app.models.room_model import RoomModel
 from app.models.contact_model import ContactModel
 from app.models.complaint_model import ComplaintModel
-from app.models.mess_model import MessModel
+from app.models.mess_model import MessModel, SnacksAttendanceModel
 from app.models.cleaning_model import CleaningModel
 from app.models.notification_model import NotificationModel
 from app.models.lms_model import LMSModel
+from app.models.sick_leave_model import SickLeaveModel
+from app.models.staff_model import StaffModel
 from app.utils.pdf_parser import extract_students_from_pdf
 from app.utils.staff_pdf_parser import extract_staff_from_pdf
 
@@ -956,4 +958,228 @@ def confirm_import_staff_pdf():
         'imported_count': imported_count,
         'message': f'{imported_count} staff details imported successfully.'
     })
+
+
+@admin_bp.route('/snacks-attendance', methods=['GET'])
+@login_required
+def snacks_attendance():
+    if not admin_only():
+        return redirect(url_for('public.index'))
+
+    date_str = request.args.get('date', datetime.now().strftime('%Y-%m-%d'))
+    filter_room = request.args.get('room', '')
+    filter_dept = request.args.get('dept', '')
+    search_q = request.args.get('search', '').strip().lower()
+
+    approved_students = LMSModel.get_approved_students()
+    existing_attendance = {a['role_number']: a for a in SnacksAttendanceModel.get_attendance_by_date(date_str)}
+    stats = SnacksAttendanceModel.get_attendance_stats(date_str)
+
+    student_records = []
+    for s in approved_students:
+        s_roll = s.get('roll_number', '')
+        s_name = s.get('full_name', '')
+        s_room = str(s.get('room_number', '101'))
+        s_dept = s.get('department', 'CSE')
+
+        if filter_room and s_room != filter_room:
+            continue
+        if filter_dept and s_dept != filter_dept:
+            continue
+        if search_q and (search_q not in s_name.lower() and search_q not in s_roll.lower() and search_q not in s_room.lower()):
+            continue
+
+        existing = existing_attendance.get(s_roll)
+        status = existing.get('status', 'Not Yet Marked') if existing else 'Not Yet Marked'
+
+        student_records.append({
+            'role_number': s_roll,
+            'full_name': s_name,
+            'room_number': s_room,
+            'department': s_dept,
+            'semester': s.get('semester', '5'),
+            'status': status,
+            'taken': (status == 'Taken'),
+            'recorded_by': existing.get('recorded_by', '—') if existing else '—',
+            'updated_at': existing.get('updated_at') if existing else None
+        })
+
+    all_rooms = RoomModel.get_all_rooms()
+
+    return render_template(
+        'warden/snacks_attendance.html',
+        date_str=date_str,
+        students=student_records,
+        stats=stats,
+        rooms=all_rooms,
+        filter_room=filter_room,
+        filter_dept=filter_dept,
+        search_q=search_q
+    )
+
+
+@admin_bp.route('/snacks-attendance/save', methods=['POST'])
+@login_required
+def snacks_attendance_save():
+    if not admin_only():
+        return redirect(url_for('public.index'))
+
+    date_str = request.form.get('date', datetime.now().strftime('%Y-%m-%d')).strip()
+    taken_roles = set(request.form.getlist('taken_students'))
+
+    approved_students = LMSModel.get_approved_students()
+    attendance_list = []
+
+    for s in approved_students:
+        roll = s.get('roll_number', '')
+        status = 'Taken' if roll in taken_roles else 'Not Taken'
+        attendance_list.append({
+            'role_number': roll,
+            'full_name': s.get('full_name', ''),
+            'room_number': s.get('room_number', '101'),
+            'department': s.get('department', 'CSE'),
+            'status': status
+        })
+
+    count = SnacksAttendanceModel.save_attendance(date_str, attendance_list, recorded_by=current_user.full_name)
+    flash("Daily Snacks Attendance Saved Successfully!", "swal_success")
+    return redirect(url_for('admin.snacks_attendance', date=date_str))
+
+
+@admin_bp.route('/leaves', methods=['GET', 'POST'])
+@login_required
+def leaves():
+    if not admin_only():
+        return redirect(url_for('public.index'))
+
+    status_filter = request.args.get('status', 'all')
+    leave_type_filter = request.args.get('leave_type', 'all')
+    filter_dept = request.args.get('dept', '')
+    search_q = request.args.get('search', '').strip().lower()
+
+    if request.method == 'POST':
+        request_id = request.form.get('request_id')
+        new_status = request.form.get('status')
+        remarks = request.form.get('warden_remarks', '').strip()
+
+        if request_id and new_status:
+            SickLeaveModel.update_status(request_id, new_status, remarks, reviewer_role="Admin", reviewer_name=current_user.full_name)
+            leave = SickLeaveModel.find_by_id(request_id)
+            if leave:
+                l_type = leave.get('leave_type', 'Sick Leave')
+                s_date = leave.get('start_date', '')
+                e_date = leave.get('end_date', '')
+                notif_msg = f"Your {l_type} Application from {s_date} to {e_date} has been updated to '{new_status}' by System Admin."
+                if remarks:
+                    notif_msg += f" Remarks: {remarks}"
+                
+                NotificationModel.create_notification(
+                    title=f"Admin Review: {l_type} ({new_status})",
+                    message=notif_msg,
+                    target_type="specific",
+                    target_users=[str(leave.get('student_id')), leave.get('role_number')],
+                    created_by=current_user.full_name
+                )
+            flash(f"Leave Application status updated to '{new_status}'.", 'swal_success')
+            return redirect(url_for('admin.leaves', status=status_filter, leave_type=leave_type_filter))
+
+    leave_list = SickLeaveModel.get_all_requests(status=status_filter, leave_type=leave_type_filter, department=filter_dept, search_q=search_q)
+    sick_leave_records = SickLeaveModel.get_sick_leave_records()
+    stats = SickLeaveModel.get_stats()
+
+    return render_template(
+        'warden/sick_leaves.html',
+        leave_list=leave_list,
+        sick_leave_records=sick_leave_records,
+        stats=stats,
+        status_filter=status_filter,
+        leave_type_filter=leave_type_filter,
+        filter_dept=filter_dept,
+        search_q=search_q,
+        show_sick_only=(leave_type_filter == 'Sick Leave'),
+        statuses=SickLeaveModel.STATUSES
+    )
+
+
+@admin_bp.route('/history-reports', methods=['GET'])
+@login_required
+def history_reports():
+    if not admin_only():
+        return redirect(url_for('public.index'))
+
+    date_str = request.args.get('date', datetime.now().strftime('%Y-%m-%d'))
+    month_str = request.args.get('month', datetime.now().strftime('%Y-%m'))
+    view_type = request.args.get('view_type', 'daily')
+    start_date = request.args.get('start_date', date_str)
+    end_date = request.args.get('end_date', date_str)
+
+    cleaning_records = CleaningModel.get_cleaning_by_date(date_str)
+    snacks_records = SnacksAttendanceModel.get_attendance_by_date(date_str)
+    staff_records = StaffModel.get_daily_attendance(date_str)
+    leave_records = SickLeaveModel.get_all_requests(date_str=date_str)
+    complaint_records = ComplaintModel.get_all_complaints()
+
+    date_complaints = []
+    for c in complaint_records:
+        cat_dt = c.get('created_at')
+        if cat_dt:
+            if isinstance(cat_dt, datetime) and cat_dt.strftime('%Y-%m-%d') == date_str:
+                date_complaints.append(c)
+            elif str(cat_dt).startswith(date_str):
+                date_complaints.append(c)
+
+    db = get_db()
+    monthly_cleaning = []
+    monthly_snacks = []
+    monthly_leaves = []
+    if db is not None:
+        monthly_cleaning = list(db.cleaning_records.find({'date': {'$regex': f'^{month_str}'}}).sort('date', 1))
+        monthly_snacks = list(db.snacks_attendance.find({'date': {'$regex': f'^{month_str}'}}).sort('date', 1))
+        monthly_leaves = list(db.sick_leaves.find({
+            '$or': [
+                {'start_date': {'$regex': f'^{month_str}'}},
+                {'end_date': {'$regex': f'^{month_str}'}}
+            ]
+        }).sort('start_date', 1))
+
+    days_in_month = {}
+    for cl in monthly_cleaning:
+        d = cl.get('date')
+        if d not in days_in_month:
+            days_in_month[d] = {'cleaning': 0, 'snacks_taken': 0, 'leaves': 0}
+        days_in_month[d]['cleaning'] += 1
+
+    for sn in monthly_snacks:
+        d = sn.get('date')
+        if d not in days_in_month:
+            days_in_month[d] = {'cleaning': 0, 'snacks_taken': 0, 'leaves': 0}
+        if sn.get('status') == 'Taken':
+            days_in_month[d]['snacks_taken'] += 1
+
+    for lv in monthly_leaves:
+        d = lv.get('start_date')
+        if d not in days_in_month:
+            days_in_month[d] = {'cleaning': 0, 'snacks_taken': 0, 'leaves': 0}
+        days_in_month[d]['leaves'] += 1
+
+    return render_template(
+        'admin/history_reports.html',
+        date_str=date_str,
+        month_str=month_str,
+        view_type=view_type,
+        start_date=start_date,
+        end_date=end_date,
+        cleaning_records=cleaning_records,
+        snacks_records=snacks_records,
+        staff_records=staff_records,
+        leave_records=leave_records,
+        complaints=date_complaints,
+        days_in_month=days_in_month,
+        monthly_cleaning_count=len(monthly_cleaning),
+        monthly_snacks_count=len(monthly_snacks),
+        monthly_leaves_count=len(monthly_leaves)
+    )
+
+
+
 

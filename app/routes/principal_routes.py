@@ -97,6 +97,9 @@ def sick_leaves():
         return redirect(url_for('public.index'))
 
     status_filter = request.args.get('status', 'all')
+    leave_type_filter = request.args.get('leave_type', 'all')
+    filter_dept = request.args.get('dept', '')
+    search_q = request.args.get('search', '').strip().lower()
 
     if request.method == 'POST':
         request_id = request.form.get('request_id')
@@ -104,26 +107,39 @@ def sick_leaves():
         remarks = request.form.get('principal_remarks', '').strip()
 
         if request_id and new_status:
-            SickLeaveModel.update_status(request_id, new_status, remarks, reviewer_role="Principal")
+            SickLeaveModel.update_status(request_id, new_status, remarks, reviewer_role="Principal", reviewer_name=current_user.full_name)
             leave = SickLeaveModel.find_by_id(request_id)
             if leave:
+                l_type = leave.get('leave_type', 'Sick Leave')
+                s_date = leave.get('start_date', '')
+                e_date = leave.get('end_date', '')
+                notif_msg = f"Your {l_type} Application from {s_date} to {e_date} has been updated to '{new_status}' by Principal."
+                if remarks:
+                    notif_msg += f" Remarks: {remarks}"
+                
                 NotificationModel.create_notification(
-                    title=f"Principal Action on Sick Leave ({new_status})",
-                    message=f"Principal updated your Sick Leave Request status to '{new_status}'. Note: {remarks}",
+                    title=f"Principal Review: {l_type} ({new_status})",
+                    message=notif_msg,
                     target_type="specific",
                     target_users=[str(leave.get('student_id')), leave.get('role_number')],
                     created_by=current_user.full_name
                 )
-            flash(f"Sick leave status updated to '{new_status}' with Principal remarks.", 'success')
-            return redirect(url_for('principal.sick_leaves', status=status_filter))
+            flash(f"Leave Application status updated to '{new_status}' with Principal remarks.", 'swal_success')
+            return redirect(url_for('principal.sick_leaves', status=status_filter, leave_type=leave_type_filter))
 
-    leave_list = SickLeaveModel.get_all_requests(status=status_filter)
+    leave_list = SickLeaveModel.get_all_requests(status=status_filter, leave_type=leave_type_filter, department=filter_dept, search_q=search_q)
+    sick_leave_records = SickLeaveModel.get_sick_leave_records()
     stats = SickLeaveModel.get_stats()
 
     return render_template(
         'principal/sick_leaves.html',
         leave_list=leave_list,
+        sick_leave_records=sick_leave_records,
         stats=stats,
         status_filter=status_filter,
+        leave_type_filter=leave_type_filter,
+        filter_dept=filter_dept,
+        search_q=search_q,
+        show_sick_only=(leave_type_filter == 'Sick Leave'),
         statuses=SickLeaveModel.STATUSES
     )
