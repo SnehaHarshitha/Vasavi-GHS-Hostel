@@ -144,6 +144,7 @@ class LMSModel:
 
         first_2 = raw_entered[:2]
         last_3 = raw_entered[-3:]
+        entered_digits = re.sub(r'\D', '', raw_entered)
 
         approved_list = list(db.approved_students.find())
         candidates = []
@@ -155,18 +156,14 @@ class LMSModel:
 
             s_first_2 = s_roll[:2]
             s_last_3 = s_roll[-3:]
+            s_digits = re.sub(r'\D', '', s_roll)
 
             # 1. Match first 2 digits AND last 3 digits/chars
-            if s_first_2 == first_2 and s_last_3 == last_3:
+            if (s_first_2 == first_2 and s_last_3 == last_3) or (
+                len(entered_digits) >= 4 and len(s_digits) >= 4 and
+                s_digits[:2] == entered_digits[:2] and s_digits[-3:] == entered_digits[-3:]
+            ):
                 candidates.append(s)
-            else:
-                # 2. Check sanitized digits matching (e.g. 23-109 -> 23 and 109)
-                entered_digits = re.sub(r'\D', '', raw_entered)
-                s_digits = re.sub(r'\D', '', s_roll)
-                if len(entered_digits) >= 4 and len(s_digits) >= 4:
-                    if s_digits[:2] == entered_digits[:2] and s_digits[-3:] == entered_digits[-3:]:
-                        if s not in candidates:
-                            candidates.append(s)
 
         if len(candidates) == 0:
             return {
@@ -174,19 +171,34 @@ class LMSModel:
                 'code': 'NOT_FOUND',
                 'message': 'Your Role Number is not available in the Admin Approved Students List. Please contact the Admin.'
             }
-        elif len(candidates) > 1:
-            # Check if exactly 1 candidate has an EXACT full roll number match
-            exact_matches = [c for c in candidates if str(c.get('roll_number', '')).strip().upper() == raw_entered]
-            if len(exact_matches) == 1:
+
+        # Deduplicate candidates by student name & roll number (e.g. if duplicate records exist in db.approved_students)
+        unique_candidates = []
+        seen_names = set()
+        for c in candidates:
+            c_name = str(c.get('full_name', '')).strip().lower()
+            c_roll = str(c.get('roll_number', '')).strip().upper()
+            key = (c_name, c_roll)
+            if key not in seen_names:
+                seen_names.add(key)
+                unique_candidates.append(c)
+
+        if len(unique_candidates) == 1:
+            candidate = unique_candidates[0]
+        else:
+            # Check for exact full roll match or exact digit match
+            exact_matches = [c for c in unique_candidates if str(c.get('roll_number', '')).strip().upper() == raw_entered]
+            if len(exact_matches) >= 1:
                 candidate = exact_matches[0]
             else:
-                return {
-                    'status': 'error',
-                    'code': 'MULTIPLE_MATCHES',
-                    'message': 'Multiple student records match your Role Number. Please contact the Admin for verification.'
-                }
-        else:
-            candidate = candidates[0]
+                exact_digits_matches = [
+                    c for c in unique_candidates
+                    if re.sub(r'\D', '', str(c.get('roll_number', ''))) == entered_digits
+                ]
+                if len(exact_digits_matches) >= 1:
+                    candidate = exact_digits_matches[0]
+                else:
+                    candidate = unique_candidates[0]
 
         # Check if candidate is ALREADY REGISTERED
         cand_roll = str(candidate.get('roll_number', '')).strip().upper()

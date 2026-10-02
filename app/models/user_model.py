@@ -64,7 +64,7 @@ class UserModel:
         upper_val = raw.upper()
         lower_val = raw.lower()
 
-        return db.users.find_one({
+        res = db.users.find_one({
             '$or': [
                 {'role_number': upper_val},
                 {'role_number': raw},
@@ -74,6 +74,21 @@ class UserModel:
                 {'email': lower_val}
             ]
         })
+        if res:
+            return res
+
+        import re
+        entered_digits = re.sub(r'\D', '', upper_val)
+        if len(entered_digits) >= 4:
+            e_first_2 = entered_digits[:2]
+            e_last_3 = entered_digits[-3:]
+            all_users = list(db.users.find({'role': 'student'}))
+            for u in all_users:
+                u_roll = str(u.get('role_number', '')).strip().upper()
+                u_digits = re.sub(r'\D', '', u_roll)
+                if len(u_digits) >= 4 and u_digits[:2] == e_first_2 and u_digits[-3:] == e_last_3:
+                    return u
+        return None
 
     @staticmethod
     def find_by_id(user_id):

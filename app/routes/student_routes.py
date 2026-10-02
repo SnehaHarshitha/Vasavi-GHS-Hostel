@@ -31,6 +31,25 @@ def dashboard():
     timetable, notes, _, _ = MessModel.get_weekly_timetable()
     today_menu = timetable.get(day_name, {})
 
+    # Sync official name & room from Admin Approved Student List
+    approved_info = LMSModel.find_approved_student(current_user.role_number, current_user.email)
+    if approved_info and approved_info.get('full_name'):
+        app_name = approved_info.get('full_name')
+        app_room = approved_info.get('room_number')
+        app_dept = approved_info.get('department')
+        updates = {}
+        if current_user.full_name != app_name:
+            updates['full_name'] = app_name
+            current_user.full_name = app_name
+        if app_room and current_user.room_number != app_room:
+            updates['room_number'] = app_room
+            current_user.room_number = app_room
+        if app_dept and current_user.department != app_dept:
+            updates['department'] = app_dept
+            current_user.department = app_dept
+        if updates:
+            UserModel.update_user(current_user.id, updates)
+
     # Food choice selection status
     food_choice = MessModel.get_student_selection(current_user.id, today_str)
 
