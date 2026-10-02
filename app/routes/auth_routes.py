@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_user, logout_user, login_required, current_user
 from app.models.user_model import UserModel
+from app.models.lms_model import LMSModel
 from app.extensions import User
 
 auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
@@ -22,6 +23,49 @@ def login():
         user_data = UserModel.find_by_email(login_identifier)
         if not user_data:
             user_data = UserModel.find_by_role_number(login_identifier)
+
+        # Auto-provision system admin, warden, principal if missing on fresh database
+        if not user_data:
+            id_lower = login_identifier.strip().lower()
+            if id_lower in ['admin', 'admin@pghostelmess.com'] and password in ['Admin@123', 'AdminPass123!']:
+                admin_dict = {
+                    'full_name': 'System Admin',
+                    'role_number': 'ADMIN01',
+                    'email': 'admin@pghostelmess.com',
+                    'phone': '+91 98480 11111',
+                    'password': password,
+                    'role': 'admin',
+                    'status': 'approved',
+                    'is_active': True
+                }
+                uid = UserModel.create_user(admin_dict)
+                user_data = UserModel.find_by_id(uid)
+            elif id_lower in ['warden', 'warden@pghostelmess.com'] and password in ['Warden@123', 'WardenPass123!']:
+                warden_dict = {
+                    'full_name': 'Hostel Warden',
+                    'role_number': 'WARDEN01',
+                    'email': 'warden@pghostelmess.com',
+                    'phone': '+91 98480 12345',
+                    'password': password,
+                    'role': 'warden',
+                    'status': 'approved',
+                    'is_active': True
+                }
+                uid = UserModel.create_user(warden_dict)
+                user_data = UserModel.find_by_id(uid)
+            elif id_lower in ['principal', 'principal@pghostelmess.com'] and password in ['Principal@123', 'PrincipalPass123!']:
+                principal_dict = {
+                    'full_name': 'College Principal',
+                    'role_number': 'PRINCIPAL01',
+                    'email': 'principal@pghostelmess.com',
+                    'phone': '+91 98480 99999',
+                    'password': password,
+                    'role': 'principal',
+                    'status': 'approved',
+                    'is_active': True
+                }
+                uid = UserModel.create_user(principal_dict)
+                user_data = UserModel.find_by_id(uid)
 
         # Auto-provision student user if not exists and trying roll number login
         if not user_data:
