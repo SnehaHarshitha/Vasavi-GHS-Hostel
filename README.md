@@ -1,206 +1,153 @@
-# PG Hostel Mess – Girls Hostel Management System
-### Sri Vasavi Engineering College, Tadepalligudem, West Godavari, Andhra Pradesh, India
-**Suggested Domain:** `pghostelmess.com`
+# GHShostel Management System
 
-A complete, production-ready, mobile-responsive girls hostel management web application built with **Flask**, **MongoDB Atlas**, **Bootstrap 5**, and **Streamlit**.
+![GHS Hostel Portal](app/static/images/vasavi_logo.png)
 
-
----
-
-## ⚡ Quick Project Startup (How to Start Every Time)
-
-Whenever you reopen the project or open a new terminal:
-
-### Option 1: Double-Click Startup Script (Windows)
-Simply double-click **`start.bat`** in the project root directory.
-
-### Option 2: Command Line (One Command)
-Run this single command in your terminal:
-```bash
-python run.py
-```
-
-This single command automatically:
-1. Detects your Python environment.
-2. Automatically frees ports `5000` and `8501` if occupied by stale processes.
-3. Verifies and seeds database data if empty.
-4. Launches the main website at **`http://localhost:5000`**
-5. Launches the Streamlit staff portal at **`http://localhost:8501`**
+A comprehensive, modern, mobile-responsive web application for managing student registration, room allocation, daily snacks attendance, leave letters, housekeeping room cleaning, grievances, and executive administrative audit reports for **Sri Vasavi Engineering College Girls Hostel (GHS Hostel)**.
 
 ---
 
-## 🌟 Key Features & Modules
+## 🌟 Key Features
 
+### 1. 👁️ Password Visibility Control (Eye Toggle)
+- Interactive eye icon (`fa-eye` / `fa-eye-slash`) inside password and confirm password fields across Student Registration, Student Login, Admin Login, Warden Login, and Principal Login.
+- Prevents accidental form submissions or input resets. Passwords are securely hashed using `werkzeug.security` before database persistence.
 
-1. **Multi-Role Authentication & Access Control**:
-   - **Student**: View profile, mess timetable, submit Thursday/Friday Egg vs Veg choices, view daily room cleaning status, track Sunday Phenyl tasks, file complaints, and view notifications.
-   - **Warden**: Manage student approvals, allocate rooms, edit weekly mess menus, log room housekeeping status, schedule Sunday Phenyl cleaning tasks, reply to complaints, broadcast notifications, and export CSV reports.
-   - **Principal Portal**: Executive overview of hostel statistics, room occupancy, grievance resolution velocity, warden activity logs, and printable executive summaries.
-   - **Admin**: Full system access, manage user roles (Admin, Warden, Principal, Student), website contact form messages, system settings, registration toggle, and database backups.
+### 2. 🆔 Auto Student Name Retrieval & Role Verification
+- **Pattern Matching (First 2 & Last 3 Digits)**: Verifies student roll numbers (e.g., `23A81A1487` or `23-1487`) against the pre-approved database roster.
+- **Auto-Fill**: Automatically populates the student's official **Full Name**, **Email**, **Department**, **Semester**, and **Assigned Room Number**.
+- **Tamper Prevention**: Pre-approved details are locked during registration to guarantee data accuracy.
 
-2. **Mess Management & Egg/Veg Selection**:
-   - Weekly menu (Breakfast, Lunch, Snacks, Dinner).
-   - Thursday & Friday choice window between **Egg Curry / Boiled Eggs** and **Special Veg Curry (Paneer/Mushroom)**.
-   - Real-time aggregated counts for mess cooks to eliminate food waste.
-   - CSV Export of daily student food choices.
+### 3. 🛏️ Dynamic Room Allocation & Warden Sorting
+- **Admin Approved Student List**: Displays dedicated Room Number, Department, Semester, and Registration Status columns with inline editing.
+- **Grouped Room Roster**: Displays hostel rooms with real-time capacity and bed occupancy.
+- **Multi-Criteria Sorting**: Sort room roster by **Room Number (Ascending & Descending)**, **Student Name**, or **Role Number**.
+- **Filtering**: Filter roster by **Floor** and **Department**.
+- **Audit Tracking**: Every room reallocation is recorded in `db.room_history`.
 
-3. **Room Cleaning & Sunday Phenyl Schedule**:
-   - Daily housekeeping tracking per room (Completed, Pending, Not Completed, Student Not Available).
-   - Dedicated Sunday Room Phenyl distribution and deep cleaning task tracker.
+### 4. 🍿 Daily Snacks Attendance Checkbox System
+- Interactive checkbox roster for Admin and Warden to mark daily snacks distribution.
+- Includes `[Save Attendance]`, `[Select All]`, `[Clear Selection]`, date picker, room filter, and department filter.
+- **Dynamic Database Cards**: Calculates live counts for **Total Registered Students**, **Snacks Taken**, **Snacks Not Taken**, and **Not Yet Marked**.
 
-4. **Complaint & Grievance Portal**:
-   - Multi-category complaint submission (Food, Water, Security, Room Cleaning, Maintenance, etc.).
-   - Priority levels (Low, Medium, High, Urgent) and anonymous filing option.
-   - Warden response tracking, status workflow (`Submitted` -> `Seen` -> `In Progress` -> `Resolved`), and student rating system.
+### 5. ✉️ Student Leave Letter Submission System
+- Enables students to submit digital leave applications with auto-retrieved credentials.
+- Supports leave types: **Sick Leave**, **Emergency Leave**, **Personal Leave**, **Family Function**, and **Other**.
+- Collects parent/guardian contact, address during leave, text explanation, and optional supporting document upload (`static/uploads/leaves/`).
+- Generates a unique **Leave Application ID** (e.g. `LV-20261002-8419`) and pushes real-time notifications to staff dashboards.
 
-5. **In-App Notification Bell**:
-   - Targeted audience notifications (All, Room-specific, Wardens, Individual students).
-   - Real-time unread counter badge in top navigation.
+### 6. 🩺 Leave Management Dashboard & Sick Leave Records
+- Filterable leave management table for Admin, Warden, and Principal.
+- Dedicated **Sick Leave Records** tab with live DB counters: **Total Sick Applications**, **Pending**, **Approved**, **Rejected**, and **Currently on Approved Sick Leave**.
+- Allows staff to review applications, enter inspection remarks, and approve/reject leave.
 
-6. **Streamlit Analytics Dashboard**:
-   - Separate Streamlit application (`streamlit_dashboard/dashboard.py`) connected to the same MongoDB Atlas database for interactive charts, visual pie/bar charts, and CSV report downloads.
+### 7. 🧹 Housekeeping & Daily Room Cleaning Checkbook
+- **Student View**: Displays room cleaning status (`Completed`, `Pending`, `Problem Reported`) and task breakdown (**Room Surface**, **Bathroom Cleaned**, **Floor Mopped**, **Waste Disposed**, **Phenyl Provided**).
+- **Student Confirmation**: Includes a `[Confirm My Room is Cleaned Today]` button for students.
+- **Warden Checkbook**: Modal inspection dialog per room to record attendant name, check time, task checkboxes, and comments.
+
+### 8. 📊 Historical Audit System & Reports
+- Dedicated **Daily & Monthly History Reports** section (`/admin/history-reports`).
+- Supports **Single Day History**, **Monthly Summary Breakdown**, **Custom Date Range**, and **PDF Export**.
+- Preserves all historical records in MongoDB Atlas across server restarts.
+
+### 9. 📱 Mobile-First Responsive Design & Navigation
+- Optimised for desktop, tablet, and smartphones ($\le 768\text{px}$).
+- Includes a fixed **Mobile Bottom Navigation Bar** for 1-tap touch navigation:
+  - **Student**: Home $\cdot$ Dashboard $\cdot$ Leave $\cdot$ Cleaning $\cdot$ Alerts
+  - **Warden / Admin**: Home $\cdot$ Dashboard $\cdot$ Snacks $\cdot$ Cleaning $\cdot$ Alerts
+  - **Principal**: Home $\cdot$ Dashboard $\cdot$ Leaves $\cdot$ Reports $\cdot$ Alerts
 
 ---
 
 ## 🛠️ Technology Stack
 
-- **Backend**: Python 3.10+, Flask, Flask Blueprints, Flask-Login, Flask-WTF, Werkzeug (Password Hashing)
-- **Database**: MongoDB Atlas (PyMongo, dnspython)
-- **Frontend**: HTML5, CSS3, Bootstrap 5, FontAwesome 6, Chart.js, Jinja2 Templates
-- **Analytics**: Streamlit, Pandas, Plotly Express
-- **Server / WSGI**: Gunicorn / Waitress
+- **Frontend**: HTML5, CSS3 (Vanilla & Bootstrap 5.3), JavaScript (ES6+), FontAwesome 6, SweetAlert2.
+- **Backend**: Python 3.10+, Flask, Werkzeug, Jinja2 template engine.
+- **Analytics Dashboard**: Streamlit.
+- **Database**: MongoDB Atlas (Cloud NoSQL DB) via `pymongo`.
 
 ---
 
-## 🚀 Quick Setup & Installation Guide
+## 🔐 Portal Roles & Permissions Matrix
 
-### Prerequisites
+| Feature / Action | Student | Warden | Admin | Principal |
+| :--- | :---: | :---: | :---: | :---: |
+| Show/Hide Password Toggle | Yes | Yes | Yes | Yes |
+| Role Auto-Verification & Details | Self | No | Manage Roster | View |
+| Room Allocation & Re-sorting | View Own | Full Manage | Full Manage | View |
+| Daily Snacks Attendance | No | Mark & Save | Mark & Save | View & Monitor |
+| Leave Letter Submission | Apply / View Own | Review / Approve | Review / Approve | Review / Approve |
+| Sick Leave Records Tab | No | View & Manage | View & Manage | Audit & Approve |
+| Room Cleaning Checkbook | Confirm / Feedback | Record & Inspect | Record & Inspect | Audit Roster |
+| Historical & Monthly Reports | No | No | Access & Export | Access & Export |
+
+---
+
+## ⚙️ Local Installation & Setup Guide
+
+### 1. Prerequisites
 - Python 3.10 or higher installed.
-- MongoDB Atlas cluster URI or local MongoDB instance (`mongodb://localhost:27017/pg_hostel_mess`).
+- Git installed.
+- MongoDB Atlas account (or local MongoDB server).
 
-### 1. Clone & Environment Setup
+### 2. Clone the Repository
 ```bash
-# Navigate to project root
-cd "e:/GHS Hostael Mess website"
+git clone https://github.com/SnehaHarshitha/Vasavi-GHS--Hostel.git
+cd Vasavi-GHS--Hostel
+```
 
-# Create Virtual Environment
+### 3. Set Up Virtual Environment (Optional but Recommended)
+```bash
+# Windows
 python -m venv venv
-
-# Activate Virtual Environment (Windows PowerShell)
 venv\Scripts\activate
 
-# Activate Virtual Environment (Linux / macOS)
+# Linux / Mac
+python3 -m venv venv
 source venv/bin/activate
+```
 
-# Install Dependencies
+### 4. Install Dependencies
+```bash
 pip install -r requirements.txt
 ```
 
-### 2. Configure Environment Variables
-Create a `.env` file from `.env.example`:
+### 5. Configure Environment Variables
+Copy `.env.example` to `.env`:
 ```bash
 cp .env.example .env
 ```
-Edit `.env` to set your MongoDB Atlas connection string:
-```env
-SECRET_KEY=pghostelmess_super_secret_key_2026_svec
-MONGO_URI=mongodb+srv://admin:password@cluster0.mongodb.net/pg_hostel_mess?retryWrites=true&w=majority
+Open `.env` and configure your credentials:
+```ini
+SECRET_KEY=your_super_secret_key_2026
+MONGO_URI=mongodb+srv://<username>:<password>@cluster0.mongodb.net/pg_hostel_mess?retryWrites=true&w=majority
 DATABASE_NAME=pg_hostel_mess
-ADMIN_EMAIL=admin@pghostelmess.com
-ADMIN_PASSWORD=AdminPass123!
+PORT=5000
+STREAMLIT_SERVER_PORT=8501
 ```
 
-### 3. Seed Sample Data
-Preload sample accounts (Admin, Warden, Principal, Students), rooms, mess menu, cleaning records, and complaints:
+### 6. Run the Application
+Launch both the Flask server and Streamlit dashboard using `run.py`:
 ```bash
-python scripts/seed_sample_data.py
+python run.py
 ```
 
-### 4. Run the Flask Web Application
-```bash
-# Development mode
-python app.py
-```
-The public website will be available at: `http://127.0.0.1:5000`
-
-### 5. Run the Streamlit Analytics Dashboard
-Open a new terminal window, activate `venv`, and run:
-```bash
-streamlit run streamlit_dashboard/dashboard.py
-```
-The Streamlit dashboard will launch at: `http://localhost:8501`
+- **Computer Browser Access**: `http://localhost:5000`
+- **Mobile Wi-Fi Access**: `http://<YOUR_COMPUTER_LOCAL_IP>:5000`
+- **Streamlit Analytics Dashboard**: `http://localhost:8501`
 
 ---
 
-## 🔐 Default Login Credentials for Testing
+## 🚀 Deployment Guidelines
 
-| Role | Login Email / Identifier | Password | Access Portal |
-| :--- | :--- | :--- | :--- |
-| **Admin** | `admin@pghostelmess.com` | `AdminPass123!` | `/admin/dashboard` |
-| **Warden** | `warden@pghostelmess.com` | `WardenPass123!` | `/warden/dashboard` |
-| **Principal** | `principal@pghostelmess.com` | `PrincipalPass123!` | `/principal/dashboard` |
-| **Student (Approved)** | `21A81A0501` or `bhavana@srivasaviengg.ac.in` | `Password123!` | `/student/dashboard` |
-| **Student (Pending)** | `21A81A0205` or `deepthi@srivasaviengg.ac.in` | `Password123!` | Awaiting approval |
-
-> **IMPORTANT**: Please change default passwords after logging in for production deployments!
-
----
-
-## 🌐 Public & Private Routes Sitemap
-
-### Public Pages
-- `/` - Home page with hero banner, features, and mess timetable preview
-- `/about` - About Sri Vasavi Engineering College & PG Girls Hostel
-- `/rules` - Detailed Hostel Rules & Regulations (inspired by top institutional guidelines)
-- `/facilities` - Hostel infrastructure (RO Water, Wi-Fi, Security, Housekeeping)
-- `/mess` - Full weekly mess timetable and Egg/Veg selection guidelines
-- `/contact` - Contact information, emergency numbers, form submission, and Google Maps embed
-
-### User Portals
-- `/auth/login` - Secure login for all user roles
-- `/auth/register` - Student registration form
-- `/student/dashboard` - Student dashboard with mess menu, cleaning status & quick actions
-- `/student/food-selection` - Thursday & Friday Egg vs Veg selection form
-- `/student/cleaning-status` - Daily room cleaning log & Sunday phenyl task schedule
-- `/student/complaints` - Grievance submission, status tracker & rating system
-- `/warden/dashboard` - Warden operational control desk
-- `/warden/students` - Student registration approval & room assignment
-- `/warden/rooms` - Room creation and bed capacity allocation
-- `/warden/mess-management` - Mess menu editor & food choice summary
-- `/warden/cleaning-management` - Daily room cleaning logger
-- `/warden/sunday-tasks` - Sunday room phenyl task scheduler
-- `/warden/complaints` - Grievance response & status updater
-- `/principal/dashboard` - Executive oversight dashboard
-- `/principal/executive-reports` - Printable executive summary reports
-- `/admin/dashboard` - System control center
-- `/admin/users` - Add staff, wardens, principals, or manage accounts
-- `/admin/contact-messages` - Public contact form submissions from MongoDB
-
----
-
-## 🌐 Production Deployment & Custom Domain Setup
-
-### Option 1: Deploy on Render
-1. Create a Web Service on Render and connect your GitHub repository.
-2. Build Command: `pip install -r requirements.txt`
-3. Start Command: `gunicorn app:app`
-4. Set Environment Variables in Render Dashboard (`MONGO_URI`, `SECRET_KEY`, etc.).
-
-### Option 2: Custom Domain (`pghostelmess.com`)
-1. In your domain provider DNS settings (e.g. GoDaddy / Namecheap):
-   - Add an `A` record pointing `@` to your server IP address.
-   - Add a `CNAME` record for `www` pointing to your deployment URL (e.g. `pghostelmess.onrender.com`).
-2. Update SSL/TLS certificates (Render / Let's Encrypt automatically issues free SSL for custom domains).
-
----
-
-## 🧪 Running Automated Tests
-```bash
-python -m unittest discover tests
-```
+1. **Production Deployment (Render / Heroku / AWS)**:
+   - Set `MONGO_URI` environment variable in your production host settings.
+   - Use `gunicorn app:app` as the web application process runner.
+2. **MongoDB Atlas Security**:
+   - Ensure Network Access whitelist includes your deployment IP or `0.0.0.0/0`.
+   - Never commit `.env` or sensitive connection strings to Git repository.
 
 ---
 
 ## 📄 License & Attribution
-- Project Identity: **PG Hostel Mess – Girls Hostel Management System**
-- Institution: **Sri Vasavi Engineering College, Tadepalligudem, West Godavari**
+Designed for **Sri Vasavi Engineering College Girls Hostel (GHS Hostel)**. All rights reserved.
