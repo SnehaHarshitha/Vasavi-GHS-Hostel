@@ -44,17 +44,17 @@ def login():
                     user_data = UserModel.find_by_id(uid)
                 if not user_data:
                     user_data = UserModel.find_by_email('admin@pghostelmess.com') or UserModel.find_by_email('admin')
-            elif id_lower in ['warden', 'caretaker', 'warden@pghostelmess.com', 'caretaker@pghostelmess.com', 'warden@srivasaviengg.ac.in', 'caretaker@srivasaviengg.ac.in']:
+            elif id_lower in ['warden', 'warden@pghostelmess.com', 'warden@srivasaviengg.ac.in']:
                 from app.extensions import get_db
                 database = get_db()
-                existing_warden = database.users.find_one({'role': {'$in': ['warden', 'caretaker']}}) if database is not None else None
+                existing_warden = database.users.find_one({'role': 'warden'}) if database is not None else None
                 if existing_warden:
                     user_data = existing_warden
                 else:
                     warden_dict = {
-                        'full_name': 'Hostel Caretaker / Warden',
-                        'role_number': 'CARETAKER01',
-                        'username': 'caretaker',
+                        'full_name': 'Hostel Warden',
+                        'role_number': 'WARDEN01',
+                        'username': 'warden',
                         'email': 'warden@pghostelmess.com',
                         'phone': '+91 98480 12345',
                         'password': password if password else 'Warden@123',
@@ -66,7 +66,7 @@ def login():
                     if uid:
                         user_data = UserModel.find_by_id(uid)
                     if not user_data:
-                        user_data = UserModel.find_by_email('warden@pghostelmess.com') or UserModel.find_by_email('caretaker')
+                        user_data = UserModel.find_by_email('warden@pghostelmess.com') or UserModel.find_by_email('warden')
             elif id_lower in ['principal', 'principal@pghostelmess.com', 'principal@srivasaviengg.ac.in']:
                 principal_dict = {
                     'full_name': 'College Principal',
