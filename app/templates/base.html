@@ -112,6 +112,16 @@
                   <li><a class="dropdown-item" href="{{ url_for('admin.lms_dashboard', active_tab='announcements') }}"><i class="fa-solid fa-bullhorn me-2 text-info"></i> Announcements</a></li>
                   <li><a class="dropdown-item" href="{{ url_for('student.notifications') }}"><i class="fa-solid fa-bell me-2 text-warning"></i> Notifications</a></li>
 
+                {% elif current_user.is_principal() %}
+                  <!-- PRINCIPAL MENU -->
+                  <li class="dropdown-header text-uppercase text-muted fw-bold small">Principal Portal</li>
+                  <li><a class="dropdown-item" href="{{ url_for('principal.dashboard') }}"><i class="fa-solid fa-gauge me-2 text-primary"></i> Dashboard</a></li>
+                  <li><a class="dropdown-item" href="{{ url_for('principal.sick_leaves') }}"><i class="fa-solid fa-file-signature me-2 text-danger"></i> Leave Applications</a></li>
+                  <li><a class="dropdown-item" href="{{ url_for('warden.cleaning_management') }}"><i class="fa-solid fa-broom me-2 text-primary"></i> Room Cleaning Roster</a></li>
+                  <li><a class="dropdown-item" href="{{ url_for('warden.snacks_attendance') }}"><i class="fa-solid fa-cookie-bite me-2 text-warning"></i> Snacks Attendance</a></li>
+                  <li><a class="dropdown-item" href="{{ url_for('principal.executive_reports') }}"><i class="fa-solid fa-chart-line me-2 text-success"></i> Executive Reports</a></li>
+                  <li><a class="dropdown-item" href="{{ url_for('warden.complaints') }}"><i class="fa-solid fa-comments me-2 text-danger"></i> Complaints Desk</a></li>
+
                 {% else %}
                   <!-- STUDENT MENU -->
                   <li class="dropdown-header text-uppercase text-muted fw-bold small">Student Portal</li>

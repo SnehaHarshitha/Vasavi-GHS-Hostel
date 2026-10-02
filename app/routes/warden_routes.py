@@ -16,10 +16,10 @@ from app.extensions import get_db
 warden_bp = Blueprint('warden', __name__, url_prefix='/warden')
 
 def warden_only():
-    if not current_user.is_authenticated or (not current_user.is_warden() and not current_user.is_admin()):
+    if not current_user.is_authenticated or (not current_user.is_warden() and not current_user.is_admin() and not current_user.is_principal()):
         if request.method in ['POST', 'PUT', 'DELETE'] or request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.is_json:
             abort(403)
-        flash('Access restricted to Warden and Admin only.', 'danger')
+        flash('Access restricted to Warden, Admin, and Principal only.', 'danger')
         return False
     return True
 
