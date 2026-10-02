@@ -6,9 +6,6 @@ pymongo>=4.6.0
 dnspython>=2.6.0
 Werkzeug>=3.0.0
 python-dotenv>=1.0.0
-streamlit>=1.30.0
-pandas
-plotly
-gunicorn
-pdfplumber
-pypdf
+gunicorn>=21.2.0
+pdfplumber>=0.10.0
+pypdf>=4.0.0
