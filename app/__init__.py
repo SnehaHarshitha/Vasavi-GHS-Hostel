@@ -42,17 +42,27 @@ def create_app(config_name='default'):
     # Global context processors (e.g. unread notifications count)
     @app.context_processor
     def inject_global_vars():
-        from flask_login import current_user
-        from app.models.notification_model import NotificationModel
         unread_count = 0
-        if current_user.is_authenticated:
-            notifs = NotificationModel.get_user_notifications(current_user)
-            unread_count = len([n for n in notifs if not n.get('is_read')])
+        try:
+            from flask_login import current_user
+            from app.models.notification_model import NotificationModel
+            if current_user and current_user.is_authenticated:
+                notifs = NotificationModel.get_user_notifications(current_user)
+                unread_count = len([n for n in notifs if not n.get('is_read')])
+        except Exception as e:
+            app.logger.warning(f"Context processor notification fetch warning: {e}")
+            unread_count = 0
+
         return dict(
             unread_notif_count=unread_count,
             current_year=2026,
             hostel_name="GHS Hostel",
             college_name="Sri Vasavi Engineering College"
         )
+
+    @app.errorhandler(500)
+    def handle_500_error(e):
+        app.logger.error(f"Internal Server Error 500: {e}")
+        return render_template('public/500.html', error=str(e)), 500
 
     return app

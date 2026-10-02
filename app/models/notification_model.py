@@ -21,24 +21,29 @@ class NotificationModel:
     @staticmethod
     def get_user_notifications(user):
         db = get_db()
-        user_id = str(user.id)
-        role_num = user.role_number
-        room_num = user.room_number
+        if db is None or not user:
+            return []
+        try:
+            user_id = str(user.id)
+            role_num = getattr(user, 'role_number', '')
+            room_num = getattr(user, 'room_number', '')
 
-        query = {
-            '$or': [
-                {'target_type': 'all'},
-                {'target_type': 'wardens', 'target_users': {'$in': [user.role]}},
-                {'target_type': 'specific', 'target_users': {'$in': [user_id, role_num]}},
-                {'target_type': 'room', 'target_users': {'$in': [room_num]}}
-            ]
-        }
-        notifications = list(db.notifications.find(query).sort('created_at', -1).limit(50))
-        
-        for n in notifications:
-            n['is_read'] = user_id in [str(uid) for uid in n.get('read_by', [])]
+            query = {
+                '$or': [
+                    {'target_type': 'all'},
+                    {'target_type': 'wardens', 'target_users': {'$in': [getattr(user, 'role', '')]}},
+                    {'target_type': 'specific', 'target_users': {'$in': [user_id, role_num]}},
+                    {'target_type': 'room', 'target_users': {'$in': [room_num]}}
+                ]
+            }
+            notifications = list(db.notifications.find(query).sort('created_at', -1).limit(50))
             
-        return notifications
+            for n in notifications:
+                n['is_read'] = user_id in [str(uid) for uid in n.get('read_by', [])]
+                
+            return notifications
+        except Exception:
+            return []
 
     @staticmethod
     def mark_as_read(notification_id, user_id):
