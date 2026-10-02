@@ -130,9 +130,10 @@
               <thead class="table-light">
                 <tr>
                   <th>Room</th>
+                  <th>Task Breakdown</th>
                   <th>Status</th>
-                  <th>Checked By</th>
-                  <th>Time</th>
+                  <th>Checked By / Time</th>
+                  <th>Remarks</th>
                 </tr>
               </thead>
               <tbody>
@@ -140,17 +141,28 @@
                 <tr>
                   <td class="fw-bold text-primary">Room {{ c.room_number }}</td>
                   <td>
+                    <div class="d-flex gap-1 flex-wrap">
+                      <span class="badge {% if c.room_cleaned %}bg-success{% else %}bg-secondary{% endif %}" title="Room Cleaned">Room</span>
+                      <span class="badge {% if c.bathroom_cleaned %}bg-info text-dark{% else %}bg-secondary{% endif %}" title="Bathroom Cleaned">Bath</span>
+                      <span class="badge {% if c.floor_cleaned %}bg-warning text-dark{% else %}bg-secondary{% endif %}" title="Floor Mopped">Floor</span>
+                      <span class="badge {% if c.waste_removed %}bg-danger{% else %}bg-secondary{% endif %}" title="Waste Disposed">Waste</span>
+                      <span class="badge {% if c.phenyl_kept %}bg-purple text-white{% else %}bg-secondary{% endif %}" style="background:#6b21a8;" title="Phenyl Provided">Phenyl</span>
+                    </div>
+                  </td>
+                  <td>
                     {% if c.status == 'Completed' %}
                       <span class="badge bg-success">Completed</span>
+                    {% elif c.status == 'Problem Reported' %}
+                      <span class="badge bg-danger">Problem Reported</span>
                     {% else %}
                       <span class="badge bg-warning text-dark">{{ c.status or 'Pending' }}</span>
                     {% endif %}
                   </td>
-                  <td>{{ c.checked_by or 'Warden' }}</td>
-                  <td class="small text-muted">{{ c.check_time or '—' }}</td>
+                  <td class="small">{{ c.checked_by or 'Warden' }} <span class="text-muted">({{ c.check_time or '—' }})</span></td>
+                  <td class="small text-muted">{{ c.remarks or '—' }}</td>
                 </tr>
                 {% else %}
-                <tr><td colspan="4" class="text-center text-muted py-3">No cleaning records stored for {{ date_str }}.</td></tr>
+                <tr><td colspan="5" class="text-center text-muted py-3">No cleaning records stored for {{ date_str }}.</td></tr>
                 {% endfor %}
               </tbody>
             </table>

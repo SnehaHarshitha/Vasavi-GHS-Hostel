@@ -258,7 +258,7 @@
 
               <div class="col-md-4">
                 <label class="form-label fw-bold small">Check Time</label>
-                <input type="text" name="check_time" class="form-control" value="{{ rec.check_time if rec else datetime.now().strftime('%I:%M %p') }}">
+                <input type="text" name="check_time" class="form-control" value="{{ rec.check_time if rec else now_time_str }}">
               </div>
 
               <div class="col-12">

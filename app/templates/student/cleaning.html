@@ -98,6 +98,14 @@
             {% endif %}
           </li>
         </ul>
+
+        <!-- Student Room Cleaning Confirmation Action -->
+        <form method="POST" action="{{ url_for('student.cleaning_status') }}" class="mt-2">
+          <input type="hidden" name="action" value="confirm_cleaned">
+          <button type="submit" class="btn btn-success btn-sm w-100 fw-bold shadow-sm">
+            <i class="fa-solid fa-circle-check me-1"></i> Confirm My Room is Cleaned Today
+          </button>
+        </form>
       </div>
     </div>
 

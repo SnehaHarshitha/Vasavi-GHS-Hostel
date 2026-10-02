@@ -130,6 +130,31 @@ def cleaning_status():
     room_no = current_user.room_number or '101'
 
     if request.method == 'POST':
+        action = request.form.get('action')
+        if action == 'confirm_cleaned':
+            db = get_db()
+            if db is not None:
+                db.cleaning_records.update_one(
+                    {'room_number': room_no, 'date': today_str},
+                    {'$set': {
+                        'room_number': room_no,
+                        'date': today_str,
+                        'status': 'Completed',
+                        'room_cleaned': True,
+                        'bathroom_cleaned': True,
+                        'floor_cleaned': True,
+                        'waste_removed': True,
+                        'cleaned_by': 'Housekeeping Staff',
+                        'checked_by': f"Student {current_user.full_name}",
+                        'check_time': datetime.now().strftime('%I:%M %p'),
+                        'remarks': 'Confirmed clean by student',
+                        'updated_at': datetime.utcnow()
+                    }},
+                    upsert=True
+                )
+            flash("Thank you! Room cleaning status confirmed as completed.", "swal_success")
+            return redirect(url_for('student.cleaning_status'))
+
         category = request.form.get('category', 'Room Not Cleaned').strip()
         description = request.form.get('description', '').strip()
 

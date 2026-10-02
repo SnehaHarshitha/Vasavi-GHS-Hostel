@@ -143,3 +143,11 @@ def sick_leaves():
         show_sick_only=(leave_type_filter == 'Sick Leave'),
         statuses=SickLeaveModel.STATUSES
     )
+
+@principal_bp.route('/cleaning-management')
+@login_required
+def cleaning_management():
+    if not principal_or_admin_only():
+        return redirect(url_for('public.index'))
+    date_str = request.args.get('date', datetime.now().strftime('%Y-%m-%d'))
+    return redirect(url_for('warden.cleaning_management', date=date_str))

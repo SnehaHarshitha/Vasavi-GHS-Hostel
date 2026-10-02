@@ -341,6 +341,7 @@ def cleaning_management():
         return redirect(url_for('public.index'))
 
     today_str = request.args.get('date', datetime.now().strftime('%Y-%m-%d'))
+    now_time_str = datetime.now().strftime('%I:%M %p')
 
     if request.method == 'POST':
         room_number = request.form.get('room_number')
@@ -360,6 +361,7 @@ def cleaning_management():
     return render_template(
         'warden/cleaning_mgmt.html',
         today_str=today_str,
+        now_time_str=now_time_str,
         rooms=all_rooms,
         cleaning_records=cleaning_records,
         stats=stats
