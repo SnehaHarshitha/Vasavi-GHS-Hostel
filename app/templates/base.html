@@ -221,13 +221,7 @@
   <script src="{{ url_for('static', filename='js/charts.js') }}"></script>
   <script>
     function smartGoBack() {
-      const referrer = document.referrer;
-      const currentOrigin = window.location.origin;
-      const currentUrl = window.location.href;
-
-      if (referrer && referrer.startsWith(currentOrigin) && referrer !== currentUrl && !referrer.includes('/auth/login') && !referrer.includes('/auth/logout')) {
-        window.location.href = referrer;
-      } else if (window.history.length > 1 && referrer && referrer.startsWith(currentOrigin)) {
+      if (window.history.length > 1 && document.referrer && document.referrer.startsWith(window.location.origin)) {
         window.history.back();
       } else {
         {% if current_user is defined and current_user.is_authenticated %}
