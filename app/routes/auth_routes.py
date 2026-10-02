@@ -41,11 +41,11 @@ def login():
                 }
                 uid = UserModel.create_user(admin_dict)
                 user_data = UserModel.find_by_id(uid)
-            elif id_lower in ['warden', 'warden@pghostelmess.com', 'warden@srivasaviengg.ac.in']:
+            elif id_lower in ['warden', 'caretaker', 'warden@pghostelmess.com', 'caretaker@pghostelmess.com', 'warden@srivasaviengg.ac.in', 'caretaker@srivasaviengg.ac.in']:
                 warden_dict = {
-                    'full_name': 'Hostel Warden',
+                    'full_name': 'Hostel Caretaker / Warden',
                     'role_number': 'WARDEN01',
-                    'username': 'warden',
+                    'username': 'caretaker',
                     'email': 'warden@pghostelmess.com',
                     'phone': '+91 98480 12345',
                     'password': password if password else 'Warden@123',
@@ -297,7 +297,7 @@ def change_password():
 def redirect_by_role(role):
     if role == 'admin':
         return redirect(url_for('admin.dashboard'))
-    elif role == 'warden':
+    elif role in ['warden', 'caretaker']:
         return redirect(url_for('warden.dashboard'))
     elif role == 'principal':
         return redirect(url_for('principal.dashboard'))

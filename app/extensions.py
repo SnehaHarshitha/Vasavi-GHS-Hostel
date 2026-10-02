@@ -37,7 +37,7 @@ class User(UserMixin):
         return self.role == 'student'
 
     def is_warden(self):
-        return self.role == 'warden'
+        return self.role in ['warden', 'caretaker']
 
     def is_admin(self):
         return self.role == 'admin'
