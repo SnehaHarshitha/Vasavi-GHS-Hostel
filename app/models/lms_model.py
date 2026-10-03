@@ -126,6 +126,13 @@ class LMSModel:
                         pass
                 approved_list = list(db.approved_students.find().sort('roll_number', 1))
 
+            db_rolls = {str(s.get('roll_number', '')).strip().upper() for s in approved_list}
+            for fb_s in FALLBACK_APPROVED_STUDENTS:
+                fb_roll = str(fb_s.get('roll_number', '')).strip().upper()
+                if fb_roll and fb_roll not in db_rolls:
+                    approved_list.append(fb_s)
+                    db_rolls.add(fb_roll)
+
             user_students = list(db.users.find({'role': 'student'}))
             for s in approved_list:
                 if not s.get('is_registered'):
@@ -133,10 +140,11 @@ class LMSModel:
                         if LMSModel.is_matching_student(s, u):
                             s['is_registered'] = True
                             s['registered_user_id'] = str(u['_id'])
-                            try:
-                                db.approved_students.update_one({'_id': s['_id']}, {'$set': {'is_registered': True, 'registered_user_id': str(u['_id'])}})
-                            except Exception:
-                                pass
+                            if '_id' in s and isinstance(s['_id'], ObjectId):
+                                try:
+                                    db.approved_students.update_one({'_id': s['_id']}, {'$set': {'is_registered': True, 'registered_user_id': str(u['_id'])}})
+                                except Exception:
+                                    pass
                             break
             return approved_list if approved_list else list(FALLBACK_APPROVED_STUDENTS)
         except Exception:

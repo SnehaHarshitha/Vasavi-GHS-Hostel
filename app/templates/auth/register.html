@@ -18,13 +18,19 @@
             
             <!-- 1. Role Number Verification Input -->
             <div class="col-12">
-              <label class="form-label fw-semibold">College Role Number <span class="text-danger">*</span></label>
-              <div class="input-group">
-                <span class="input-group-text bg-light"><i class="fa-solid fa-id-card text-primary"></i></span>
-                <input type="text" id="role_number_input" name="role_number" class="form-control text-uppercase fw-bold" placeholder="e.g. 21A81A0501 or 23-109" value="{{ form_data.get('role_number', '') if form_data else '' }}" required>
-                <button type="button" class="btn btn-outline-primary fw-semibold" onclick="verifyRoleNumber()"><i class="fa-solid fa-magnifying-glass me-1"></i> Verify Role No.</button>
+              <label class="form-label fw-bold text-dark fs-6">College Role Number <span class="text-danger">*</span></label>
+              <div class="input-group input-group-lg shadow-sm">
+                <span class="input-group-text bg-primary text-white"><i class="fa-solid fa-id-card"></i></span>
+                <input type="text" id="role_number_input" name="role_number" class="form-control text-uppercase fw-bold fs-5 text-primary" placeholder="e.g. 25A81A663 or 25-636" value="{{ form_data.get('role_number', '') if form_data else '' }}" required>
+                <button type="button" class="btn btn-primary fw-bold px-4" onclick="verifyRoleNumber()"><i class="fa-solid fa-magnifying-glass me-1"></i> Verify Role No.</button>
               </div>
-              <div class="form-text text-muted small">Enter your college role number (partial matching will check first 2 and last 3 digits).</div>
+              <div class="form-text mt-2 text-dark fw-bold">
+                <i class="fa-solid fa-circle-info me-1 text-primary"></i> <span class="text-primary fw-bold fs-6">Example Formats:</span>
+                <span class="badge bg-dark text-white px-2 py-1 me-1 fs-6">25A81A663</span>
+                <span class="badge bg-dark text-white px-2 py-1 me-1 fs-6">25-636</span>
+                <span class="badge bg-dark text-white px-2 py-1 fs-6">21A81A0501</span>
+                <div class="text-dark fw-semibold small mt-1">Full JNTU format (25A81A663) and PDF short format (25-636) are both 100% supported.</div>
+              </div>
             </div>
 
             <!-- Role Number Verification Feedback Alert Box -->
