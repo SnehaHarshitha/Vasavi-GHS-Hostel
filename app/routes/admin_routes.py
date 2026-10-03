@@ -645,32 +645,38 @@ def confirm_import_pdf():
     if not admin_only():
         return jsonify({'success': False, 'error': 'Unauthorized access.'}), 403
 
-    payload = request.get_json() or {}
-    students_to_import = payload.get('students', [])
+    try:
+        payload = request.get_json() or {}
+        students_to_import = payload.get('students', [])
 
-    if not students_to_import:
-        return jsonify({'success': False, 'error': 'No valid students selected for import.'}), 400
+        if not students_to_import:
+            return jsonify({'success': False, 'error': 'No valid students selected for import.'}), 400
 
-    clean_students = []
-    for s in students_to_import:
-        clean_students.append({
-            'roll_number': s.get('roll_number', '').strip().upper(),
-            'full_name': s.get('full_name', '').strip(),
-            'email': s.get('email', '').strip().lower(),
-            'department': s.get('department', 'CSE').strip(),
-            'semester': str(s.get('semester', '5')).strip(),
-            'phone': s.get('phone', '').strip(),
-            'room_number': s.get('room_number', '101').strip()
+        clean_students = []
+        for s in students_to_import:
+            clean_students.append({
+                'roll_number': s.get('roll_number', '').strip().upper(),
+                'full_name': s.get('full_name', '').strip(),
+                'email': s.get('email', '').strip().lower(),
+                'department': s.get('department', 'CSE').strip(),
+                'semester': str(s.get('semester', '5')).strip(),
+                'phone': s.get('phone', '').strip(),
+                'room_number': s.get('room_number', '101').strip()
+            })
+
+        added_count = LMSModel.bulk_import_approved_students(clean_students)
+        flash(f'✓ {added_count} students imported successfully from PDF.', 'success')
+
+        return jsonify({
+            'success': True,
+            'imported_count': added_count,
+            'message': f'{added_count} students imported successfully.'
         })
-
-    added_count = LMSModel.bulk_import_approved_students(clean_students)
-    flash(f'✓ {added_count} students imported successfully from PDF.', 'success')
-
-    return jsonify({
-        'success': True,
-        'imported_count': added_count,
-        'message': f'{added_count} students imported successfully.'
-    })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': f'Failed to import students: {str(e)}'
+        }), 500
 
 # --- ANNOUNCEMENTS ---
 @admin_bp.route('/announcements/add', methods=['POST'])

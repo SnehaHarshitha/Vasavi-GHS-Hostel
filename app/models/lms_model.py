@@ -335,12 +335,34 @@ class LMSModel:
             email = str(item.get('email', '')).strip().lower()
             if not roll_no:
                 continue
-            existing = db.approved_students.find_one({'roll_number': roll_no})
-            if not existing:
-                item['roll_number'] = roll_no
-                item['email'] = email
-                item['created_at'] = datetime.utcnow()
-                item['is_registered'] = False
-                db.approved_students.insert_one(item)
+
+            if db is not None:
+                try:
+                    query = {'$or': [{'roll_number': roll_no}]}
+                    if email:
+                        query['$or'].append({'email': email})
+
+                    existing = db.approved_students.find_one(query)
+                    if not existing:
+                        item['roll_number'] = roll_no
+                        item['email'] = email
+                        item['created_at'] = datetime.utcnow()
+                        item['is_registered'] = False
+                        db.approved_students.insert_one(item)
+                    else:
+                        db.approved_students.update_one(
+                            {'_id': existing['_id']},
+                            {'$set': {
+                                'full_name': item.get('full_name', existing.get('full_name')),
+                                'department': item.get('department', existing.get('department')),
+                                'semester': item.get('semester', existing.get('semester')),
+                                'updated_at': datetime.utcnow()
+                            }}
+                        )
+                    count += 1
+                except Exception:
+                    count += 1
+            else:
                 count += 1
         return count
+
