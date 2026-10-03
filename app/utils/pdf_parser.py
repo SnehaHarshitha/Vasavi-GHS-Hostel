@@ -31,13 +31,13 @@ def parse_student_row(tokens):
     if any(h in lower_text for h in ['roll number', 'student name', 'full name', 'email address', 'department', 'semester', 's.no', 'sl.no', 'page ', 'college']):
         return None
 
-    # 1. Extract Roll Number
+    # 1. Extract Roll Number (supports 23-61A7, 21A81A0501, 23-631, 23-250, etc.)
     roll_number = ""
-    roll_match = re.search(r'\b([0-9]{2}[A-Z0-9]{8,10})\b', full_str, re.IGNORECASE)
+    roll_match = re.search(r'\b(\d{2}[-.\s]?[A-Z0-9]{3,10})\b', full_str, re.IGNORECASE)
     if not roll_match:
-        roll_match = re.search(r'\b([A-Z0-9]{8,12})\b', full_str, re.IGNORECASE)
+        roll_match = re.search(r'\b([A-Z0-9]{4,12})\b', full_str, re.IGNORECASE)
     if roll_match:
-        roll_number = roll_match.group(1).upper()
+        roll_number = roll_match.group(1).upper().replace(' ', '')
 
     # 2. Extract Email
     email = ""
@@ -68,7 +68,7 @@ def parse_student_row(tokens):
 
         if not w_clean:
             continue
-        if roll_number and w_upper == roll_number:
+        if roll_number and (w_upper == roll_number or w_upper == roll_number.replace('-', '')):
             continue
         if email and w_lower == email:
             continue
@@ -78,7 +78,7 @@ def parse_student_row(tokens):
             continue
         if re.fullmatch(r'\d+', w_clean):
             continue
-        if w_lower in {'s.no', 'sl.no', 'no.', 'roll', 'name', 'email', 'dept', 'sem', 'branch', 'status'}:
+        if w_lower in {'s.no', 'sl.no', 'no.', 'roll', 'name', 'email', 'dept', 'sem', 'branch', 'status', 'htno', 'h.t.no'}:
             continue
         if re.search(r'[a-zA-Z]', w_clean) and not w_lower.startswith('http'):
             name_parts.append(w_clean)
@@ -88,10 +88,11 @@ def parse_student_row(tokens):
     if not roll_number and not full_name:
         return None
 
+    clean_roll_for_email = roll_number.lower().replace('-', '').replace('.', '')
     return {
         'roll_number': roll_number,
         'full_name': full_name,
-        'email': email or (f"{roll_number.lower()}@srivasaviengg.ac.in" if roll_number else ""),
+        'email': email or (f"{clean_roll_for_email}@srivasaviengg.ac.in" if clean_roll_for_email else ""),
         'department': department,
         'semester': semester
     }
@@ -102,14 +103,14 @@ def find_column_indices(header_row):
     for i, cell in enumerate(header_row):
         if not cell:
             continue
-        c_lower = str(cell).lower().replace('\n', ' ')
-        if 'name' in c_lower or 'student' in c_lower:
+        c_lower = str(cell).lower().replace('\n', ' ').strip()
+        if 'name' in c_lower or 'student' in c_lower or 'candidate' in c_lower:
             col_map['name'] = i
-        elif 'roll' in c_lower or 'reg' in c_lower or 'id' in c_lower:
+        elif 'roll' in c_lower or 'reg' in c_lower or 'ht' in c_lower or 'h.t' in c_lower or 'pin' in c_lower or 'id' in c_lower:
             col_map['roll'] = i
         elif 'room' in c_lower:
             col_map['room'] = i
-        elif 'branch' in c_lower or 'dept' in c_lower or 'department' in c_lower:
+        elif 'branch' in c_lower or 'dept' in c_lower or 'department' in c_lower or 'course' in c_lower:
             col_map['dept'] = i
         elif 'email' in c_lower:
             col_map['email'] = i
@@ -137,75 +138,79 @@ def extract_students_from_pdf(file_stream_or_bytes):
     try:
         with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
             for page in pdf.pages:
-                text = page.extract_text() or ""
-                if text.strip():
-                    has_text = True
+                try:
+                    text = page.extract_text() or ""
+                    if text.strip():
+                        has_text = True
 
-                tables = page.extract_tables()
-                if tables:
-                    for table in tables:
-                        if not table:
-                            continue
-
-                        # Check if first row is a header
-                        header_row = table[0]
-                        col_map = find_column_indices(header_row)
-
-                        start_idx = 1 if ('name' in col_map or 'roll' in col_map) else 0
-
-                        for row in table[start_idx:]:
-                            if not row:
+                    tables = page.extract_tables()
+                    if tables:
+                        for table in tables:
+                            if not table:
                                 continue
 
-                            if col_map and ('name' in col_map or 'roll' in col_map):
-                                name = str(row[col_map['name']]).strip() if 'name' in col_map and col_map['name'] < len(row) and row[col_map['name']] else ""
-                                roll = str(row[col_map['roll']]).strip().upper() if 'roll' in col_map and col_map['roll'] < len(row) and row[col_map['roll']] else ""
-                                room = str(row[col_map['room']]).strip() if 'room' in col_map and col_map['room'] < len(row) and row[col_map['room']] else "101"
-                                dept_raw = str(row[col_map['dept']]).strip() if 'dept' in col_map and col_map['dept'] < len(row) and row[col_map['dept']] else "CSE"
-                                email_raw = str(row[col_map['email']]).strip().lower() if 'email' in col_map and col_map['email'] < len(row) and row[col_map['email']] else ""
+                            # Search first 3 rows for column headers
+                            header_idx = 0
+                            col_map = {}
+                            for idx, row in enumerate(table[:3]):
+                                col_map = find_column_indices(row)
+                                if 'name' in col_map or 'roll' in col_map:
+                                    header_idx = idx
+                                    break
 
-                                # Clean name (remove newlines, extra spaces)
-                                name = re.sub(r'\s+', ' ', name).strip()
-                                dept = dept_raw.upper().replace('\n', '') if dept_raw else "CSE"
+                            start_idx = header_idx + 1 if ('name' in col_map or 'roll' in col_map) else 0
 
-                                # Extract branch if dept contains multi-word text
-                                for k_dept in KNOWN_DEPARTMENTS:
-                                    if k_dept in dept:
-                                        dept = k_dept
-                                        break
-
-                                # Skip headers repeating inside table
-                                if name.lower() in ['name of the student', 'student name', 'full name', 'name'] or roll.lower() in ['roll no.', 'roll no', 'roll number']:
+                            for row in table[start_idx:]:
+                                if not row:
                                     continue
 
-                                if name or roll:
-                                    # Standardize roll number if empty or short
-                                    if not roll and name:
-                                        roll = re.sub(r'[^A-Za-z0-9]', '', name).upper()[:10]
-                                    
-                                    clean_email = email_raw if '@' in email_raw else f"{roll.lower().replace('-', '')}@srivasaviengg.ac.in"
+                                if col_map and ('name' in col_map or 'roll' in col_map):
+                                    name = str(row[col_map['name']]).strip() if 'name' in col_map and col_map['name'] < len(row) and row[col_map['name']] else ""
+                                    roll = str(row[col_map['roll']]).strip().upper() if 'roll' in col_map and col_map['roll'] < len(row) and row[col_map['roll']] else ""
+                                    room = str(row[col_map['room']]).strip() if 'room' in col_map and col_map['room'] < len(row) and row[col_map['room']] else "101"
+                                    dept_raw = str(row[col_map['dept']]).strip() if 'dept' in col_map and col_map['dept'] < len(row) and row[col_map['dept']] else "CSE"
+                                    email_raw = str(row[col_map['email']]).strip().lower() if 'email' in col_map and col_map['email'] < len(row) and row[col_map['email']] else ""
 
-                                    students.append({
-                                        'roll_number': roll,
-                                        'full_name': name,
-                                        'email': clean_email,
-                                        'department': dept or 'CSE',
-                                        'semester': '5',
-                                        'room_number': room or '101'
-                                    })
-                            else:
-                                # Fallback row parsing
-                                s_dict = parse_student_row(row)
-                                if s_dict and (s_dict.get('roll_number') or s_dict.get('full_name')):
-                                    students.append(s_dict)
+                                    name = re.sub(r'\s+', ' ', name).strip()
+                                    dept = dept_raw.upper().replace('\n', '') if dept_raw else "CSE"
 
-                # Attempt 1b: Fallback to text line extraction if no table rows found
-                if not students and text.strip():
-                    lines = text.splitlines()
-                    for line in lines:
-                        s_dict = parse_student_row(line)
-                        if s_dict and (s_dict.get('roll_number') or s_dict.get('full_name')):
-                            students.append(s_dict)
+                                    for k_dept in KNOWN_DEPARTMENTS:
+                                        if k_dept in dept:
+                                            dept = k_dept
+                                            break
+
+                                    if name.lower() in ['name of the student', 'student name', 'full name', 'name', 'candidate name'] or roll.lower() in ['roll no.', 'roll no', 'roll number', 'htno', 'h.t.no']:
+                                        continue
+
+                                    if name or roll:
+                                        if not roll and name:
+                                            roll = re.sub(r'[^A-Za-z0-9]', '', name).upper()[:10]
+                                        
+                                        clean_roll_email = roll.lower().replace('-', '').replace('.', '')
+                                        clean_email = email_raw if ('@' in email_raw) else f"{clean_roll_email}@srivasaviengg.ac.in"
+
+                                        students.append({
+                                            'roll_number': roll,
+                                            'full_name': name,
+                                            'email': clean_email,
+                                            'department': dept or 'CSE',
+                                            'semester': '5',
+                                            'room_number': room or '101'
+                                        })
+                                else:
+                                    s_dict = parse_student_row(row)
+                                    if s_dict and (s_dict.get('roll_number') or s_dict.get('full_name')):
+                                        students.append(s_dict)
+
+                    # Line fallback if table parsing yielded no students for this page
+                    if not students and text.strip():
+                        lines = text.splitlines()
+                        for line in lines:
+                            s_dict = parse_student_row(line)
+                            if s_dict and (s_dict.get('roll_number') or s_dict.get('full_name')):
+                                students.append(s_dict)
+                except Exception:
+                    continue
     except Exception:
         pass
 
@@ -225,8 +230,11 @@ def extract_students_from_pdf(file_stream_or_bytes):
         except Exception as ex:
             raise ValueError(f"Unable to process PDF: {str(ex)}")
 
-    if not has_text:
+    if not has_text and not students:
         raise ValueError("The PDF does not contain readable text. Please upload a text-based PDF.")
+
+    if not students:
+        raise ValueError("No valid student records could be found in the uploaded PDF. Please verify the PDF layout.")
 
     # Deduplicate students in the same PDF by roll_number or full_name
     unique_students = []
@@ -240,3 +248,4 @@ def extract_students_from_pdf(file_stream_or_bytes):
             unique_students.append(s)
 
     return unique_students
+

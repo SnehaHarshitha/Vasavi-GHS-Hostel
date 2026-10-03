@@ -581,8 +581,8 @@ def preview_pdf_students():
         extracted_students = extract_students_from_pdf(pdf_bytes)
     except ValueError as ve:
         return jsonify({'success': False, 'error': str(ve)}), 400
-    except Exception:
-        return jsonify({'success': False, 'error': 'Unable to process this PDF. Please check the file and try again.'}), 400
+    except Exception as e:
+        return jsonify({'success': False, 'error': f'Unable to process PDF: {str(e)}'}), 400
 
     if not extracted_students:
         return jsonify({'success': False, 'error': 'The PDF does not contain readable student data.'}), 400
