@@ -24,7 +24,7 @@ class SickLeaveModel:
         'Other Illness'
     ]
 
-    STATUSES = ['Pending', 'Approved', 'Rejected', 'Completed']
+    STATUSES = ['Pending', 'Submitted', 'Approved', 'Approved by Warden', 'Approved by Principal', 'Rejected', 'Completed']
 
     @staticmethod
     def generate_leave_id():

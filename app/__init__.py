@@ -7,7 +7,8 @@ def create_app(config_name='default'):
     app = Flask(__name__, instance_relative_config=True)
     
     # Load configuration
-    app.config.from_object(config_by_name[config_name])
+    config_class = config_by_name.get(config_name, config_by_name.get('production', config_by_name['default']))
+    app.config.from_object(config_class)
     
     # Ensure upload folder exists
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
