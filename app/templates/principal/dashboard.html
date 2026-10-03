@@ -15,7 +15,7 @@
         <i class="fa-solid fa-broom me-1"></i> Room Cleaning Roster ({{ cleaning_stats.completed }}/{{ cleaning_stats.total_rooms }})
       </a>
       <a href="{{ url_for('principal.sick_leaves') }}" class="btn btn-danger fw-bold shadow">
-        <i class="fa-solid fa-notes-medical me-1"></i> Sick Leaves Audit ({{ sick_leave_stats.submitted }})
+        <i class="fa-solid fa-notes-medical me-1"></i> Sick Leaves Audit ({{ sick_leave_stats.submitted or sick_leave_stats.pending or 0 }})
       </a>
       <a href="{{ url_for('principal.executive_reports') }}" class="btn btn-primary fw-bold shadow">
         <i class="fa-solid fa-file-invoice me-1"></i> Executive Summary Reports

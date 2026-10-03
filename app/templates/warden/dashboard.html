@@ -58,7 +58,7 @@
         <div class="d-flex justify-content-between align-items-center">
           <div>
             <span class="text-muted small fw-semibold">Unresolved Complaints</span>
-            <h3 class="fw-bold text-dark mb-0 mt-1">{{ complaint_stats.submitted + complaint_stats.in_progress }}</h3>
+            <h3 class="fw-bold text-dark mb-0 mt-1">{{ (complaint_stats.submitted or 0) + (complaint_stats.in_progress or 0) }}</h3>
           </div>
           <i class="fa-solid fa-headset text-danger fs-1"></i>
         </div>
@@ -74,7 +74,7 @@
       <a href="{{ url_for('warden.mess_management') }}" class="btn btn-outline-primary fw-semibold"><i class="fa-solid fa-utensils me-1"></i> Mess Timetable</a>
       <a href="{{ url_for('warden.cleaning_management') }}" class="btn btn-outline-primary fw-semibold"><i class="fa-solid fa-broom me-1"></i> Room Cleaning Log</a>
       <a href="{{ url_for('warden.sunday_tasks') }}" class="btn btn-outline-primary fw-semibold"><i class="fa-solid fa-spray-can-sparkles me-1"></i> Sunday Phenyl Tasks</a>
-      <a href="{{ url_for('warden.sick_leaves') }}" class="btn btn-danger fw-semibold"><i class="fa-solid fa-notes-medical me-1"></i> Sick Leave Desk ({{ sick_leave_stats.submitted }})</a>
+      <a href="{{ url_for('warden.sick_leaves') }}" class="btn btn-danger fw-semibold"><i class="fa-solid fa-notes-medical me-1"></i> Sick Leave Desk ({{ sick_leave_stats.submitted or sick_leave_stats.pending or 0 }})</a>
       <a href="{{ url_for('warden.complaints') }}" class="btn btn-outline-danger fw-semibold"><i class="fa-solid fa-headset me-1"></i> Complaints Desk</a>
       <a href="{{ url_for('warden.export_food_selection') }}" class="btn btn-outline-success fw-semibold"><i class="fa-solid fa-file-csv me-1"></i> Export Food CSV</a>
     </div>

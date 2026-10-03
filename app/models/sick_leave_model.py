@@ -179,28 +179,31 @@ class SickLeaveModel:
     def get_stats():
         db = get_db()
         if db is None:
-            return {'total': 0, 'pending': 0, 'approved': 0, 'rejected': 0, 'sick_total': 0, 'currently_on_sick': 0}
+            return {'total': 0, 'pending': 0, 'submitted': 0, 'approved': 0, 'rejected': 0, 'sick_total': 0, 'currently_on_sick': 0}
 
-        today_str = datetime.utcnow().strftime('%Y-%m-%d')
-        total = db.sick_leaves.count_documents({})
-        pending = db.sick_leaves.count_documents({'status': {'$in': ['Pending', 'Submitted']}})
-        approved = db.sick_leaves.count_documents({'status': {'$in': ['Approved', 'Approved by Warden', 'Approved by Principal']}})
-        rejected = db.sick_leaves.count_documents({'status': 'Rejected'})
+        try:
+            today_str = datetime.utcnow().strftime('%Y-%m-%d')
+            total = db.sick_leaves.count_documents({})
+            pending = db.sick_leaves.count_documents({'status': {'$in': ['Pending', 'Submitted']}})
+            approved = db.sick_leaves.count_documents({'status': {'$in': ['Approved', 'Approved by Warden', 'Approved by Principal']}})
+            rejected = db.sick_leaves.count_documents({'status': 'Rejected'})
 
-        sick_total = db.sick_leaves.count_documents({'leave_type': 'Sick Leave'})
-        currently_on_sick = db.sick_leaves.count_documents({
-            'leave_type': 'Sick Leave',
-            'status': {'$in': ['Approved', 'Approved by Warden', 'Approved by Principal']},
-            'start_date': {'$lte': today_str},
-            'end_date': {'$gte': today_str}
-        })
+            sick_total = db.sick_leaves.count_documents({'leave_type': 'Sick Leave'})
+            currently_on_sick = db.sick_leaves.count_documents({
+                'leave_type': 'Sick Leave',
+                'status': {'$in': ['Approved', 'Approved by Warden', 'Approved by Principal']},
+                'start_date': {'$lte': today_str},
+                'end_date': {'$gte': today_str}
+            })
 
-        return {
-            'total': total,
-            'pending': pending,
-            'submitted': pending,
-            'approved': approved,
-            'rejected': rejected,
-            'sick_total': sick_total,
-            'currently_on_sick': currently_on_sick
-        }
+            return {
+                'total': total,
+                'pending': pending,
+                'submitted': pending,
+                'approved': approved,
+                'rejected': rejected,
+                'sick_total': sick_total,
+                'currently_on_sick': currently_on_sick
+            }
+        except Exception:
+            return {'total': 0, 'pending': 0, 'submitted': 0, 'approved': 0, 'rejected': 0, 'sick_total': 0, 'currently_on_sick': 0}
