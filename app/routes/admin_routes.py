@@ -869,8 +869,10 @@ def preview_pdf_staff():
             return jsonify({'success': False, 'error': 'The uploaded PDF file is empty.'}), 400
 
         extracted_staff = extract_staff_from_pdf(pdf_bytes)
-    except Exception:
-        return jsonify({'success': False, 'error': 'Unable to process this PDF. Please verify that the PDF is readable.'}), 400
+    except ValueError as ve:
+        return jsonify({'success': False, 'error': str(ve)}), 400
+    except Exception as e:
+        return jsonify({'success': False, 'error': f'Unable to process PDF: {str(e)}'}), 400
 
     if not extracted_staff:
         return jsonify({'success': False, 'error': 'The PDF does not contain readable staff data.'}), 400
