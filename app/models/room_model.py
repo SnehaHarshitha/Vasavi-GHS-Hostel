@@ -15,16 +15,25 @@ class RoomModel:
     @staticmethod
     def get_all_rooms():
         db = get_db()
-        return list(db.rooms.find().sort('room_number', 1))
+        if db is None:
+            return []
+        try:
+            return list(db.rooms.find().sort('room_number', 1))
+        except Exception:
+            return []
 
     @staticmethod
     def find_by_room_number(room_number):
         db = get_db()
+        if db is None:
+            return None
         return db.rooms.find_one({'room_number': room_number})
 
     @staticmethod
     def find_by_id(room_id):
         db = get_db()
+        if db is None:
+            return None
         try:
             return db.rooms.find_one({'_id': ObjectId(room_id)})
         except Exception:
@@ -33,6 +42,8 @@ class RoomModel:
     @staticmethod
     def update_room(room_id, update_data):
         db = get_db()
+        if db is None:
+            return None
         return db.rooms.update_one({'_id': ObjectId(room_id)}, {'$set': update_data})
 
     @staticmethod

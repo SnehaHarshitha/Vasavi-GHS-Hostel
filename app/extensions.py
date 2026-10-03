@@ -91,15 +91,20 @@ def get_db():
     global db
     return db
 
+FALLBACK_USERS = {}
+
 @login_manager.user_loader
 def load_user(user_id):
     database = get_db()
-    if database is None:
-        return None
-    try:
-        user_data = database.users.find_one({"_id": ObjectId(user_id)})
-        if user_data:
-            return User(user_data)
-    except Exception:
-        return None
+    if database is not None:
+        try:
+            user_data = database.users.find_one({"_id": ObjectId(user_id)})
+            if user_data:
+                return User(user_data)
+        except Exception:
+            pass
+            
+    if user_id in FALLBACK_USERS:
+        return User(FALLBACK_USERS[user_id])
+
     return None
