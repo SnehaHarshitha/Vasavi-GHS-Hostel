@@ -143,19 +143,56 @@ class LMSModel:
             return list(FALLBACK_APPROVED_STUDENTS)
 
     @staticmethod
+    def is_role_match(stored_roll, entered_role):
+        if not stored_roll or not entered_role:
+            return False
+
+        s_raw = str(stored_roll).strip().upper()
+        e_raw = str(entered_role).strip().upper()
+
+        if s_raw == e_raw:
+            return True
+
+        s_clean = re.sub(r'[^A-Z0-9]', '', s_raw)
+        e_clean = re.sub(r'[^A-Z0-9]', '', e_raw)
+        if s_clean == e_clean:
+            return True
+
+        s_digits = re.sub(r'\D', '', s_raw)
+        e_digits = re.sub(r'\D', '', e_raw)
+
+        if len(s_digits) >= 2 and len(e_digits) >= 2 and s_digits[:2] == e_digits[:2]:
+            s_nums = re.findall(r'\d+', s_raw)
+            e_nums = re.findall(r'\d+', e_raw)
+            if s_nums and e_nums:
+                try:
+                    if int(s_nums[-1]) == int(e_nums[-1]):
+                        return True
+                except Exception:
+                    pass
+
+        if len(s_raw) >= 4 and len(e_raw) >= 4:
+            if s_raw[:2] == e_raw[:2] and s_raw[-3:] == e_raw[-3:]:
+                return True
+
+        if len(s_clean) >= 4 and len(e_clean) >= 4:
+            if s_clean in e_clean or e_clean in s_clean:
+                return True
+
+        return False
+
+    @staticmethod
     def find_approved_student(roll_number=None, email=None):
         db = get_db()
         r_upper = str(roll_number).strip().upper() if roll_number else ''
         e_lower = str(email).strip().lower() if email else ''
-        r_digits = re.sub(r'\D', '', r_upper)
 
         approved_list = LMSModel.get_approved_students()
         for s in approved_list:
             s_roll = str(s.get('roll_number', '')).strip().upper()
             s_email = str(s.get('email', '')).strip().lower()
-            s_digits = re.sub(r'\D', '', s_roll)
 
-            if r_upper and (r_upper == s_roll or (r_digits and r_digits == s_digits)):
+            if r_upper and LMSModel.is_role_match(s_roll, r_upper):
                 return s
             if e_lower and (e_lower == s_email or e_lower.split('@')[0] == s_email.split('@')[0]):
                 return s
@@ -173,33 +210,19 @@ class LMSModel:
             }
 
         raw_entered = str(entered_role).strip().upper()
-        if len(raw_entered) < 4:
+        if len(raw_entered) < 3:
             return {
                 'status': 'error',
                 'code': 'INVALID_LENGTH',
                 'message': 'Role Number is too short.'
             }
 
-        first_2 = raw_entered[:2]
-        last_3 = raw_entered[-3:]
-        entered_digits = re.sub(r'\D', '', raw_entered)
-
         approved_list = LMSModel.get_approved_students()
         candidates = []
 
         for s in approved_list:
             s_roll = str(s.get('roll_number', '')).strip().upper()
-            if len(s_roll) < 4:
-                continue
-
-            s_first_2 = s_roll[:2]
-            s_last_3 = s_roll[-3:]
-            s_digits = re.sub(r'\D', '', s_roll)
-
-            if (s_first_2 == first_2 and s_last_3 == last_3) or (
-                len(entered_digits) >= 4 and len(s_digits) >= 4 and
-                s_digits[:2] == entered_digits[:2] and s_digits[-3:] == entered_digits[-3:]
-            ):
+            if LMSModel.is_role_match(s_roll, raw_entered):
                 candidates.append(s)
 
         if len(candidates) == 0:
@@ -226,14 +249,7 @@ class LMSModel:
             if len(exact_matches) >= 1:
                 candidate = exact_matches[0]
             else:
-                exact_digits_matches = [
-                    c for c in unique_candidates
-                    if re.sub(r'\D', '', str(c.get('roll_number', ''))) == entered_digits
-                ]
-                if len(exact_digits_matches) >= 1:
-                    candidate = exact_digits_matches[0]
-                else:
-                    candidate = unique_candidates[0]
+                candidate = unique_candidates[0]
 
         cand_roll = str(candidate.get('roll_number', '')).strip().upper()
         cand_email = str(candidate.get('email', '')).strip().lower()
