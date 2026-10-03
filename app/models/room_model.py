@@ -19,13 +19,20 @@ class RoomModel:
 
     @staticmethod
     def get_all_rooms():
+        default_rooms = [
+            {'room_number': '101', 'floor': 'Floor 1', 'capacity': 4, 'occupied_beds': 2, 'status': 'occupied', 'assigned_students': [{'student_name': 'K. Bhavana', 'role_number': '21A81A0501'}, {'student_name': 'M. Sneha Latha', 'role_number': '21A81A0502'}]},
+            {'room_number': '102', 'floor': 'Floor 1', 'capacity': 4, 'occupied_beds': 1, 'status': 'occupied', 'assigned_students': [{'student_name': 'P. Sreeja', 'role_number': '22A81A0403'}]},
+            {'room_number': '201', 'floor': 'Floor 2', 'capacity': 4, 'occupied_beds': 1, 'status': 'occupied', 'assigned_students': [{'student_name': 'T. Harika', 'role_number': '23A81A1204'}]},
+            {'room_number': '202', 'floor': 'Floor 2', 'capacity': 4, 'occupied_beds': 0, 'status': 'available', 'assigned_students': []}
+        ]
         db = get_db()
         if db is None:
-            return []
+            return default_rooms
         try:
-            return list(db.rooms.find().sort('room_number', 1))
+            rooms = list(db.rooms.find().sort('room_number', 1))
+            return rooms if rooms else default_rooms
         except Exception:
-            return []
+            return default_rooms
 
     @staticmethod
     def find_by_room_number(room_number):

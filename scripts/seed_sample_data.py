@@ -13,9 +13,12 @@ load_dotenv()
 MONGO_URI = os.getenv('MONGO_URI', 'mongodb://localhost:27017/pg_hostel_mess')
 DATABASE_NAME = os.getenv('DATABASE_NAME', 'pg_hostel_mess')
 
-def seed_sample_data():
-    client = MongoClient(MONGO_URI)
-    db = client[DATABASE_NAME]
+def seed_sample_data(target_db=None):
+    if target_db is not None:
+        db = target_db
+    else:
+        client = MongoClient(MONGO_URI)
+        db = client[DATABASE_NAME]
 
     print("Clearing existing sample data...")
     db.users.delete_many({})

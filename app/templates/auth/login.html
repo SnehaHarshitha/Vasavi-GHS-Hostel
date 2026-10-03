@@ -268,17 +268,13 @@
   function fillEmp(email, password) {
     document.getElementById('emp_identifier').value = email;
     document.getElementById('emp_password').value = password;
-    setTimeout(function() {
-      document.getElementById('emp_form').submit();
-    }, 100);
+    document.getElementById('emp_identifier').focus();
   }
 
   function fillStu(id, password) {
     document.getElementById('stu_identifier').value = id;
     document.getElementById('stu_password').value = password;
-    setTimeout(function() {
-      document.getElementById('stu_form').submit();
-    }, 100);
+    document.getElementById('stu_identifier').focus();
   }
 </script>
 {% endblock %}
