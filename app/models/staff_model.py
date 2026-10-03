@@ -1,6 +1,6 @@
 from datetime import datetime
 from bson.objectid import ObjectId
-from app.extensions import get_db
+from app.extensions import get_db, to_oid
 
 class StaffModel:
     # ----------------------------------------------------
@@ -14,26 +14,36 @@ class StaffModel:
         query = {}
         if status:
             query['status'] = status
-        return list(db.caretakers.find(query).sort('staff_id', 1))
+        try:
+            return list(db.caretakers.find(query).sort('staff_id', 1))
+        except Exception:
+            return []
 
     @staticmethod
     def find_caretaker_by_staff_id(staff_id):
         db = get_db()
         if db is None or not staff_id:
             return None
-        return db.caretakers.find_one({'staff_id': str(staff_id).strip().upper()})
+        try:
+            return db.caretakers.find_one({'staff_id': str(staff_id).strip().upper()})
+        except Exception:
+            return None
 
     @staticmethod
     def find_caretaker_by_id(ct_id):
         db = get_db()
+        if db is None:
+            return None
         try:
-            return db.caretakers.find_one({'_id': ObjectId(ct_id)})
+            return db.caretakers.find_one({'_id': to_oid(ct_id)})
         except Exception:
             return None
 
     @staticmethod
     def create_caretaker(data):
         db = get_db()
+        if db is None:
+            return None
         data['staff_id'] = str(data.get('staff_id', '')).strip().upper()
         data['full_name'] = str(data.get('full_name', '')).strip()
         data['phone'] = str(data.get('phone', '')).strip()
@@ -44,24 +54,40 @@ class StaffModel:
         data['category'] = 'Caretaker'
         data['created_at'] = datetime.utcnow()
         data['updated_at'] = datetime.utcnow()
-        return db.caretakers.insert_one(data).inserted_id
+        try:
+            return db.caretakers.insert_one(data).inserted_id
+        except Exception:
+            return None
 
     @staticmethod
     def update_caretaker(ct_id, data):
         db = get_db()
+        if db is None:
+            return None
         if 'staff_id' in data:
             data['staff_id'] = str(data['staff_id']).strip().upper()
         data['updated_at'] = datetime.utcnow()
-        return db.caretakers.update_one({'_id': ObjectId(ct_id)}, {'$set': data})
+        try:
+            return db.caretakers.update_one({'_id': to_oid(ct_id)}, {'$set': data})
+        except Exception:
+            return None
 
     @staticmethod
     def delete_caretaker(ct_id):
         db = get_db()
+        if db is None:
+            return None
         ct = StaffModel.find_caretaker_by_id(ct_id)
         if ct:
             # Also clean up attendance records
-            db.staff_attendance.delete_many({'staff_id': ct.get('staff_id')})
-        return db.caretakers.delete_one({'_id': ObjectId(ct_id)})
+            try:
+                db.staff_attendance.delete_many({'staff_id': ct.get('staff_id')})
+            except Exception:
+                pass
+        try:
+            return db.caretakers.delete_one({'_id': to_oid(ct_id)})
+        except Exception:
+            return None
 
     # ----------------------------------------------------
     # WORKING STAFF MANAGEMENT
@@ -74,26 +100,36 @@ class StaffModel:
         query = {}
         if status:
             query['status'] = status
-        return list(db.working_staff.find(query).sort('staff_id', 1))
+        try:
+            return list(db.working_staff.find(query).sort('staff_id', 1))
+        except Exception:
+            return []
 
     @staticmethod
     def find_working_staff_by_staff_id(staff_id):
         db = get_db()
         if db is None or not staff_id:
             return None
-        return db.working_staff.find_one({'staff_id': str(staff_id).strip().upper()})
+        try:
+            return db.working_staff.find_one({'staff_id': str(staff_id).strip().upper()})
+        except Exception:
+            return None
 
     @staticmethod
     def find_working_staff_by_id(ws_id):
         db = get_db()
+        if db is None:
+            return None
         try:
-            return db.working_staff.find_one({'_id': ObjectId(ws_id)})
+            return db.working_staff.find_one({'_id': to_oid(ws_id)})
         except Exception:
             return None
 
     @staticmethod
     def create_working_staff(data):
         db = get_db()
+        if db is None:
+            return None
         data['staff_id'] = str(data.get('staff_id', '')).strip().upper()
         data['full_name'] = str(data.get('full_name', '')).strip()
         data['phone'] = str(data.get('phone', '')).strip()
@@ -105,23 +141,39 @@ class StaffModel:
         data['category'] = 'Working Staff'
         data['created_at'] = datetime.utcnow()
         data['updated_at'] = datetime.utcnow()
-        return db.working_staff.insert_one(data).inserted_id
+        try:
+            return db.working_staff.insert_one(data).inserted_id
+        except Exception:
+            return None
 
     @staticmethod
     def update_working_staff(ws_id, data):
         db = get_db()
+        if db is None:
+            return None
         if 'staff_id' in data:
             data['staff_id'] = str(data['staff_id']).strip().upper()
         data['updated_at'] = datetime.utcnow()
-        return db.working_staff.update_one({'_id': ObjectId(ws_id)}, {'$set': data})
+        try:
+            return db.working_staff.update_one({'_id': to_oid(ws_id)}, {'$set': data})
+        except Exception:
+            return None
 
     @staticmethod
     def delete_working_staff(ws_id):
         db = get_db()
+        if db is None:
+            return None
         ws = StaffModel.find_working_staff_by_id(ws_id)
         if ws:
-            db.staff_attendance.delete_many({'staff_id': ws.get('staff_id')})
-        return db.working_staff.delete_one({'_id': ObjectId(ws_id)})
+            try:
+                db.staff_attendance.delete_many({'staff_id': ws.get('staff_id')})
+            except Exception:
+                pass
+        try:
+            return db.working_staff.delete_one({'_id': to_oid(ws_id)})
+        except Exception:
+            return None
 
     # ----------------------------------------------------
     # STAFF ATTENDANCE OPERATIONS & DASHBOARD
