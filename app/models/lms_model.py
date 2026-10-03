@@ -291,8 +291,9 @@ class LMSModel:
         phone = str(data.get('phone', '')).strip()
         room = str(data.get('room_number', '101')).strip()
 
+        clean_id = f"app_{int(datetime.utcnow().timestamp())}_{re.sub(r'[^a-zA-Z0-9]', '_', roll_no)}"
         doc = {
-            '_id': f"app_{datetime.utcnow().timestamp()}",
+            '_id': clean_id,
             'roll_number': roll_no,
             'full_name': full_name or roll_no,
             'email': email or f"{roll_no.lower()}@srivasaviengg.ac.in",
@@ -318,8 +319,9 @@ class LMSModel:
 
     @staticmethod
     def update_approved_student(app_id, data):
+        r_upper = str(data.get('roll_number', '')).strip().upper()
         for s in FALLBACK_APPROVED_STUDENTS:
-            if str(s.get('_id')) == str(app_id) or str(s.get('roll_number')).upper() == str(data.get('roll_number', '')).upper():
+            if str(s.get('_id')) == str(app_id) or (r_upper and str(s.get('roll_number')).upper() == r_upper):
                 s.update({k: v for k, v in data.items() if v is not None})
                 break
 
@@ -333,7 +335,10 @@ class LMSModel:
             data['email'] = str(data['email']).strip().lower()
         data['updated_at'] = datetime.utcnow()
         try:
-            return db.approved_students.update_one({'_id': to_oid(app_id)}, {'$set': data})
+            res = db.approved_students.update_one({'_id': to_oid(app_id)}, {'$set': data})
+            if res.matched_count == 0 and r_upper:
+                db.approved_students.update_one({'roll_number': r_upper}, {'$set': data})
+            return True
         except Exception:
             return True
 
@@ -355,7 +360,10 @@ class LMSModel:
             except Exception:
                 pass
         try:
-            return db.approved_students.delete_one({'_id': to_oid(app_id)})
+            res = db.approved_students.delete_one({'_id': to_oid(app_id)})
+            if res.deleted_count == 0 and roll:
+                db.approved_students.delete_one({'roll_number': roll})
+            return True
         except Exception:
             return True
 
@@ -388,8 +396,9 @@ class LMSModel:
                 clean_r = roll_no.lower().replace('-', '').replace('.', '')
                 email = f"{clean_r}@srivasaviengg.ac.in"
 
+            clean_id = f"app_imp_{int(datetime.utcnow().timestamp())}_{count}_{re.sub(r'[^a-zA-Z0-9]', '_', roll_no)}"
             fb_doc = {
-                '_id': f"app_imp_{datetime.utcnow().timestamp()}_{count}",
+                '_id': clean_id,
                 'roll_number': roll_no,
                 'full_name': name or roll_no,
                 'email': email,

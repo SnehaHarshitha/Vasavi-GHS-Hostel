@@ -88,10 +88,10 @@
                   {% endif %}
                 </td>
                 <td class="text-end">
-                  <button type="button" class="btn btn-sm btn-outline-primary me-1" data-bs-toggle="modal" data-bs-target="#editMessModal{{ m._id }}">
+                  <button type="button" class="btn btn-sm btn-outline-primary me-1" data-bs-toggle="modal" data-bs-target="#editMessModal{{ m._id|string|replace('.', '_')|replace('@', '_')|replace(' ', '_') }}">
                     <i class="fa-solid fa-pen-to-square me-1"></i> Edit
                   </button>
-                  <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteMessModal{{ m._id }}">
+                  <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteMessModal{{ m._id|string|replace('.', '_')|replace('@', '_')|replace(' ', '_') }}">
                     <i class="fa-solid fa-trash me-1"></i> Delete
                   </button>
                 </td>
@@ -237,10 +237,10 @@
                   {% endif %}
                 </td>
                 <td class="text-end">
-                  <button type="button" class="btn btn-sm btn-outline-primary me-1" data-bs-toggle="modal" data-bs-target="#editApprovedStudentModal{{ s._id }}">
+                  <button type="button" class="btn btn-sm btn-outline-primary me-1" data-bs-toggle="modal" data-bs-target="#editApprovedStudentModal{{ s._id|string|replace('.', '_')|replace('@', '_')|replace(' ', '_') }}">
                     <i class="fa-solid fa-pen-to-square me-1"></i> Edit
                   </button>
-                  <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteApprovedStudentModal{{ s._id }}">
+                  <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteApprovedStudentModal{{ s._id|string|replace('.', '_')|replace('@', '_')|replace(' ', '_') }}">
                     <i class="fa-solid fa-trash me-1"></i> Delete
                   </button>
                 </td>
@@ -280,10 +280,10 @@
                 <div class="small text-muted"><i class="fa-regular fa-clock me-1"></i> Published: {{ a.created_at.strftime('%b %d, %Y') if a.created_at else 'Recent' }}</div>
               </div>
               <div class="d-flex gap-1">
-                <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editAncModal{{ a._id }}">
+                <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editAncModal{{ a._id|string|replace('.', '_')|replace('@', '_')|replace(' ', '_') }}">
                   <i class="fa-solid fa-pen-to-square"></i> Edit
                 </button>
-                <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteAncModal{{ a._id }}">
+                <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteAncModal{{ a._id|string|replace('.', '_')|replace('@', '_')|replace(' ', '_') }}">
                   <i class="fa-solid fa-trash"></i> Delete
                 </button>
               </div>
@@ -451,7 +451,7 @@
                         <td><span class="badge bg-secondary p-1"><i class="fa-regular fa-clock me-1"></i> {{ st.check_out or '05:00 PM' }}</span></td>
                         <td>
                           {% if st.att_id %}
-                          <button type="button" class="btn btn-sm btn-outline-primary p-1 px-2" data-bs-toggle="modal" data-bs-target="#editAttModal{{ st.att_id }}">
+                          <button type="button" class="btn btn-sm btn-outline-primary p-1 px-2" data-bs-toggle="modal" data-bs-target="#editAttModal{{ st.att_id|string|replace('.', '_')|replace('@', '_')|replace(' ', '_') }}">
                             <i class="fa-solid fa-pen-to-square me-1"></i> Edit
                           </button>
                           {% endif %}
@@ -494,7 +494,7 @@
                         <td class="small text-danger fst-italic">{{ st.remarks or 'Uninformed absence' }}</td>
                         <td>
                           {% if st.att_id %}
-                          <button type="button" class="btn btn-sm btn-outline-primary p-1 px-2" data-bs-toggle="modal" data-bs-target="#editAttModal{{ st.att_id }}">
+                          <button type="button" class="btn btn-sm btn-outline-primary p-1 px-2" data-bs-toggle="modal" data-bs-target="#editAttModal{{ st.att_id|string|replace('.', '_')|replace('@', '_')|replace(' ', '_') }}">
                             <i class="fa-solid fa-pen-to-square me-1"></i> Edit
                           </button>
                           {% endif %}
@@ -537,7 +537,7 @@
                         <td class="small text-muted">{{ st.remarks or 'Approved leave' }}</td>
                         <td>
                           {% if st.att_id %}
-                          <button type="button" class="btn btn-sm btn-outline-primary p-1 px-2" data-bs-toggle="modal" data-bs-target="#editAttModal{{ st.att_id }}">
+                          <button type="button" class="btn btn-sm btn-outline-primary p-1 px-2" data-bs-toggle="modal" data-bs-target="#editAttModal{{ st.att_id|string|replace('.', '_')|replace('@', '_')|replace(' ', '_') }}">
                             <i class="fa-solid fa-pen-to-square me-1"></i> Edit
                           </button>
                           {% endif %}
@@ -706,10 +706,10 @@
                     <td>{{ c.shift }}</td>
                     <td><span class="badge {% if c.status == 'Active' %}bg-success{% else %}bg-secondary{% endif %}">{{ c.status }}</span></td>
                     <td class="text-end">
-                      <button type="button" class="btn btn-sm btn-outline-primary me-1" data-bs-toggle="modal" data-bs-target="#editCaretakerModal{{ c._id }}">
+                      <button type="button" class="btn btn-sm btn-outline-primary me-1" data-bs-toggle="modal" data-bs-target="#editCaretakerModal{{ c._id|string|replace('.', '_')|replace('@', '_')|replace(' ', '_') }}">
                         <i class="fa-solid fa-pen-to-square me-1"></i> Edit
                       </button>
-                      <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteCaretakerModal{{ c._id }}">
+                      <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteCaretakerModal{{ c._id|string|replace('.', '_')|replace('@', '_')|replace(' ', '_') }}">
                         <i class="fa-solid fa-trash me-1"></i> Delete
                       </button>
                     </td>
@@ -763,10 +763,10 @@
                     <td>{{ w.shift }}</td>
                     <td><span class="badge {% if w.status == 'Active' %}bg-success{% else %}bg-secondary{% endif %}">{{ w.status }}</span></td>
                     <td class="text-end">
-                      <button type="button" class="btn btn-sm btn-outline-primary me-1" data-bs-toggle="modal" data-bs-target="#editWorkingStaffModal{{ w._id }}">
+                      <button type="button" class="btn btn-sm btn-outline-primary me-1" data-bs-toggle="modal" data-bs-target="#editWorkingStaffModal{{ w._id|string|replace('.', '_')|replace('@', '_')|replace(' ', '_') }}">
                         <i class="fa-solid fa-pen-to-square me-1"></i> Edit
                       </button>
-                      <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteWorkingStaffModal{{ w._id }}">
+                      <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteWorkingStaffModal{{ w._id|string|replace('.', '_')|replace('@', '_')|replace(' ', '_') }}">
                         <i class="fa-solid fa-trash me-1"></i> Delete
                       </button>
                     </td>
@@ -852,7 +852,7 @@
 
 <!-- CARETAKER EDIT & DELETE MODALS -->
 {% for c in caretakers %}
-<div class="modal fade text-start" id="editCaretakerModal{{ c._id }}" tabindex="-1">
+<div class="modal fade text-start" id="editCaretakerModal{{ c._id|string|replace('.', '_')|replace('@', '_')|replace(' ', '_') }}" tabindex="-1">
   <div class="modal-dialog">
     <form action="{{ url_for('admin.edit_caretaker', ct_id=c._id) }}" method="POST" class="modal-content">
       <div class="modal-header bg-primary text-white">
@@ -910,7 +910,7 @@
   </div>
 </div>
 
-<div class="modal fade text-start" id="deleteCaretakerModal{{ c._id }}" tabindex="-1">
+<div class="modal fade text-start" id="deleteCaretakerModal{{ c._id|string|replace('.', '_')|replace('@', '_')|replace(' ', '_') }}" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header bg-danger text-white">
@@ -1001,7 +1001,7 @@
 
 <!-- WORKING STAFF EDIT & DELETE MODALS -->
 {% for w in working_staff %}
-<div class="modal fade text-start" id="editWorkingStaffModal{{ w._id }}" tabindex="-1">
+<div class="modal fade text-start" id="editWorkingStaffModal{{ w._id|string|replace('.', '_')|replace('@', '_')|replace(' ', '_') }}" tabindex="-1">
   <div class="modal-dialog">
     <form action="{{ url_for('admin.edit_working_staff', ws_id=w._id) }}" method="POST" class="modal-content">
       <div class="modal-header bg-primary text-white">
@@ -1068,7 +1068,7 @@
   </div>
 </div>
 
-<div class="modal fade text-start" id="deleteWorkingStaffModal{{ w._id }}" tabindex="-1">
+<div class="modal fade text-start" id="deleteWorkingStaffModal{{ w._id|string|replace('.', '_')|replace('@', '_')|replace(' ', '_') }}" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header bg-danger text-white">
@@ -1091,7 +1091,7 @@
 
 <!-- SINGLE ATTENDANCE RECORD EDIT MODALS -->
 {% for r in daily_attendance_records %}
-<div class="modal fade text-start" id="editAttModal{{ r._id }}" tabindex="-1">
+<div class="modal fade text-start" id="editAttModal{{ r._id|string|replace('.', '_')|replace('@', '_')|replace(' ', '_') }}" tabindex="-1">
   <div class="modal-dialog">
     <form action="{{ url_for('admin.edit_single_staff_attendance', att_id=r._id) }}" method="POST" class="modal-content">
       <input type="hidden" name="date" value="{{ selected_date }}">
@@ -1134,7 +1134,7 @@
 
 <!-- MESS ITEM EDIT & DELETE MODALS -->
 {% for m in mess_items %}
-<div class="modal fade text-start" id="editMessModal{{ m._id }}" tabindex="-1">
+<div class="modal fade text-start" id="editMessModal{{ m._id|string|replace('.', '_')|replace('@', '_')|replace(' ', '_') }}" tabindex="-1">
   <div class="modal-dialog">
     <form action="{{ url_for('admin.edit_mess_item', item_id=m._id) }}" method="POST" class="modal-content">
       <div class="modal-header bg-primary text-white">
@@ -1182,7 +1182,7 @@
   </div>
 </div>
 
-<div class="modal fade text-start" id="deleteMessModal{{ m._id }}" tabindex="-1">
+<div class="modal fade text-start" id="deleteMessModal{{ m._id|string|replace('.', '_')|replace('@', '_')|replace(' ', '_') }}" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header bg-danger text-white">
@@ -1205,7 +1205,7 @@
 
 <!-- APPROVED STUDENT EDIT & DELETE MODALS -->
 {% for s in approved_students %}
-<div class="modal fade text-start" id="editApprovedStudentModal{{ s._id }}" tabindex="-1">
+<div class="modal fade text-start" id="editApprovedStudentModal{{ s._id|string|replace('.', '_')|replace('@', '_')|replace(' ', '_') }}" tabindex="-1">
   <div class="modal-dialog">
     <form action="{{ url_for('admin.edit_approved_student', student_id=s._id) }}" method="POST" class="modal-content">
       <div class="modal-header bg-primary text-white">
@@ -1265,7 +1265,7 @@
   </div>
 </div>
 
-<div class="modal fade text-start" id="deleteApprovedStudentModal{{ s._id }}" tabindex="-1">
+<div class="modal fade text-start" id="deleteApprovedStudentModal{{ s._id|string|replace('.', '_')|replace('@', '_')|replace(' ', '_') }}" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header bg-danger text-white">
@@ -1289,7 +1289,7 @@
 
 <!-- ANNOUNCEMENT EDIT & DELETE MODALS -->
 {% for a in announcements %}
-<div class="modal fade text-start" id="editAncModal{{ a._id }}" tabindex="-1">
+<div class="modal fade text-start" id="editAncModal{{ a._id|string|replace('.', '_')|replace('@', '_')|replace(' ', '_') }}" tabindex="-1">
   <div class="modal-dialog">
     <form action="{{ url_for('admin.edit_announcement', anc_id=a._id) }}" method="POST" class="modal-content">
       <div class="modal-header bg-primary text-white">
@@ -1322,7 +1322,7 @@
   </div>
 </div>
 
-<div class="modal fade text-start" id="deleteAncModal{{ a._id }}" tabindex="-1">
+<div class="modal fade text-start" id="deleteAncModal{{ a._id|string|replace('.', '_')|replace('@', '_')|replace(' ', '_') }}" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header bg-danger text-white">
