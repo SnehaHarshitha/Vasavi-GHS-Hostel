@@ -2,7 +2,7 @@ import random
 import string
 from datetime import datetime
 from bson.objectid import ObjectId
-from app.extensions import get_db
+from app.extensions import get_db, to_oid
 
 class SickLeaveModel:
     LEAVE_TYPES = [
@@ -35,12 +35,14 @@ class SickLeaveModel:
     @staticmethod
     def create_request(student_id, student_name, role_number, room_number, start_date, end_date, reason, leave_type="Sick Leave", department="CSE", semester="5", parent_name="", parent_phone="", address_during_leave="", remarks="", symptoms="", request_sick_diet=False, staying_in_hostel=True, supporting_document=""):
         db = get_db()
+        if db is None:
+            return None
         now = datetime.utcnow()
         leave_id = SickLeaveModel.generate_leave_id()
 
         doc = {
             'leave_id': leave_id,
-            'student_id': ObjectId(student_id),
+            'student_id': to_oid(student_id),
             'student_name': student_name,
             'role_number': role_number,
             'room_number': room_number or '101',
@@ -64,8 +66,11 @@ class SickLeaveModel:
             'created_at': now,
             'updated_at': now
         }
-        db.sick_leaves.insert_one(doc)
-        return leave_id
+        try:
+            db.sick_leaves.insert_one(doc)
+            return leave_id
+        except Exception:
+            return leave_id
 
     @staticmethod
     def get_student_requests(student_id):
@@ -73,9 +78,12 @@ class SickLeaveModel:
         if db is None:
             return []
         try:
-            return list(db.sick_leaves.find({'student_id': ObjectId(student_id)}).sort('created_at', -1))
+            return list(db.sick_leaves.find({'student_id': to_oid(student_id)}).sort('created_at', -1))
         except Exception:
-            return list(db.sick_leaves.find({'role_number': student_id}).sort('created_at', -1))
+            try:
+                return list(db.sick_leaves.find({'role_number': student_id}).sort('created_at', -1))
+            except Exception:
+                return []
 
     @staticmethod
     def get_active_student_request(student_id, today_str):
@@ -136,9 +144,12 @@ class SickLeaveModel:
         if db is None:
             return None
         try:
-            return db.sick_leaves.find_one({'_id': ObjectId(request_id)})
+            return db.sick_leaves.find_one({'_id': to_oid(request_id)})
         except Exception:
-            return db.sick_leaves.find_one({'leave_id': request_id})
+            try:
+                return db.sick_leaves.find_one({'leave_id': request_id})
+            except Exception:
+                return None
 
     @staticmethod
     def update_status(request_id, status, remarks="", reviewer_role="Warden", reviewer_name="Warden"):
@@ -157,9 +168,12 @@ class SickLeaveModel:
             update_doc['warden_remarks'] = remarks
 
         try:
-            return db.sick_leaves.update_one({'_id': ObjectId(request_id)}, {'$set': update_doc})
+            return db.sick_leaves.update_one({'_id': to_oid(request_id)}, {'$set': update_doc})
         except Exception:
-            return db.sick_leaves.update_one({'leave_id': request_id}, {'$set': update_doc})
+            try:
+                return db.sick_leaves.update_one({'leave_id': request_id}, {'$set': update_doc})
+            except Exception:
+                return None
 
     @staticmethod
     def get_stats():

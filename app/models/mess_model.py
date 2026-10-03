@@ -1,6 +1,6 @@
 from datetime import datetime
 from bson.objectid import ObjectId
-from app.extensions import get_db
+from app.extensions import get_db, to_oid
 
 class MessModel:
     DAY_ORDER = {'Monday': 1, 'Tuesday': 2, 'Wednesday': 3, 'Thursday': 4, 'Friday': 5, 'Saturday': 6, 'Sunday': 7}
@@ -11,25 +11,31 @@ class MessModel:
         db = get_db()
         if db is None:
             return []
-        records = list(db.mess_menu.find())
-        # Sort by day order then meal order
-        records.sort(key=lambda r: (
-            MessModel.DAY_ORDER.get(str(r.get('day', '')).capitalize(), 99),
-            MessModel.MEAL_ORDER.get(str(r.get('meal_type', '')).lower(), 99)
-        ))
-        return records
+        try:
+            records = list(db.mess_menu.find())
+            records.sort(key=lambda r: (
+                MessModel.DAY_ORDER.get(str(r.get('day', '')).capitalize(), 99),
+                MessModel.MEAL_ORDER.get(str(r.get('meal_type', '')).lower(), 99)
+            ))
+            return records
+        except Exception:
+            return []
 
     @staticmethod
     def get_menu_item_by_id(item_id):
         db = get_db()
+        if db is None:
+            return None
         try:
-            return db.mess_menu.find_one({'_id': ObjectId(item_id)})
+            return db.mess_menu.find_one({'_id': to_oid(item_id)})
         except Exception:
             return None
 
     @staticmethod
     def add_menu_item(data):
         db = get_db()
+        if db is None:
+            return None
         data['day'] = str(data.get('day', 'Monday')).capitalize()
         data['meal_type'] = str(data.get('meal_type', 'breakfast')).lower()
         data['time'] = str(data.get('time', '')).strip()
@@ -39,11 +45,16 @@ class MessModel:
         data['status'] = str(data.get('status', 'active')).strip()
         data['created_at'] = datetime.utcnow()
         data['updated_at'] = datetime.utcnow()
-        return db.mess_menu.insert_one(data).inserted_id
+        try:
+            return db.mess_menu.insert_one(data).inserted_id
+        except Exception:
+            return None
 
     @staticmethod
     def update_menu_item(item_id, data):
         db = get_db()
+        if db is None:
+            return None
         update_data = {
             'day': str(data.get('day', 'Monday')).capitalize(),
             'meal_type': str(data.get('meal_type', 'breakfast')).lower(),
@@ -54,30 +65,43 @@ class MessModel:
             'status': str(data.get('status', 'active')).strip(),
             'updated_at': datetime.utcnow()
         }
-        return db.mess_menu.update_one({'_id': ObjectId(item_id)}, {'$set': update_data})
+        try:
+            return db.mess_menu.update_one({'_id': to_oid(item_id)}, {'$set': update_data})
+        except Exception:
+            return None
 
     @staticmethod
     def delete_menu_item(item_id):
         db = get_db()
-        return db.mess_menu.delete_one({'_id': ObjectId(item_id)})
+        if db is None:
+            return None
+        try:
+            return db.mess_menu.delete_one({'_id': to_oid(item_id)})
+        except Exception:
+            return None
 
     @staticmethod
     def set_menu_item(day, meal_type, menu_items, time="", is_special_day=False, food_type="veg", special_note=""):
         db = get_db()
-        db.mess_menu.update_one(
-            {'day': day.capitalize(), 'meal_type': meal_type.lower()},
-            {'$set': {
-                'day': day.capitalize(),
-                'meal_type': meal_type.lower(),
-                'time': time,
-                'menu_items': menu_items,
-                'is_special_day': is_special_day,
-                'food_type': food_type,
-                'special_note': special_note,
-                'updated_at': datetime.utcnow()
-            }},
-            upsert=True
-        )
+        if db is None:
+            return None
+        try:
+            db.mess_menu.update_one(
+                {'day': day.capitalize(), 'meal_type': meal_type.lower()},
+                {'$set': {
+                    'day': day.capitalize(),
+                    'meal_type': meal_type.lower(),
+                    'time': time,
+                    'menu_items': menu_items,
+                    'is_special_day': is_special_day,
+                    'food_type': food_type,
+                    'special_note': special_note,
+                    'updated_at': datetime.utcnow()
+                }},
+                upsert=True
+            )
+        except Exception:
+            pass
 
     @staticmethod
     def get_weekly_timetable():
@@ -91,49 +115,63 @@ class MessModel:
         is_choice_day = {'Thursday': True, 'Friday': True}
 
         if db is not None:
-            records = list(db.mess_menu.find({'status': {'$ne': 'inactive'}}))
-            for r in records:
-                d = r.get('day')
-                m = r.get('meal_type')
-                if d in timetable and m in timetable[d]:
-                    timetable[d][m] = r.get('menu_items', '')
-                    if r.get('time'):
-                        times[d][m] = r.get('time', '')
-                    if r.get('special_note'):
-                        notes[d] = r.get('special_note')
+            try:
+                records = list(db.mess_menu.find({'status': {'$ne': 'inactive'}}))
+                for r in records:
+                    d = r.get('day')
+                    m = r.get('meal_type')
+                    if d in timetable and m in timetable[d]:
+                        timetable[d][m] = r.get('menu_items', '')
+                        if r.get('time'):
+                            times[d][m] = r.get('time', '')
+                        if r.get('special_note'):
+                            notes[d] = r.get('special_note')
+            except Exception:
+                pass
 
         return timetable, notes, is_choice_day, times
 
     @staticmethod
     def save_food_selection(student_id, role_number, date_str, food_choice):
         db = get_db()
+        if db is None:
+            return None
         now = datetime.utcnow()
-        db.food_selections.update_one(
-            {'student_id': ObjectId(student_id), 'date': date_str},
-            {'$set': {
-                'student_id': ObjectId(student_id),
-                'role_number': role_number,
-                'date': date_str,
-                'food_choice': food_choice, # 'egg' or 'veg'
-                'selection_status': 'submitted',
-                'updated_at': now
-            }},
-            upsert=True
-        )
+        try:
+            db.food_selections.update_one(
+                {'student_id': to_oid(student_id), 'date': date_str},
+                {'$set': {
+                    'student_id': to_oid(student_id),
+                    'role_number': role_number,
+                    'date': date_str,
+                    'food_choice': food_choice, # 'egg' or 'veg'
+                    'selection_status': 'submitted',
+                    'updated_at': now
+                }},
+                upsert=True
+            )
+        except Exception:
+            pass
 
     @staticmethod
     def get_student_selection(student_id, date_str):
         db = get_db()
         if db is None:
             return None
-        return db.food_selections.find_one({'student_id': ObjectId(student_id), 'date': date_str})
+        try:
+            return db.food_selections.find_one({'student_id': to_oid(student_id), 'date': date_str})
+        except Exception:
+            return None
 
     @staticmethod
     def get_student_selection_history(student_id):
         db = get_db()
         if db is None:
             return []
-        return list(db.food_selections.find({'student_id': ObjectId(student_id)}).sort('date', -1))
+        try:
+            return list(db.food_selections.find({'student_id': to_oid(student_id)}).sort('date', -1))
+        except Exception:
+            return []
 
     @staticmethod
     def get_daily_selection_counts(date_str):

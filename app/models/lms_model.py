@@ -1,7 +1,7 @@
 import re
 from datetime import datetime
 from bson.objectid import ObjectId
-from app.extensions import get_db
+from app.extensions import get_db, to_oid
 
 class LMSModel:
     # ----------------------------------------------------
@@ -15,13 +15,18 @@ class LMSModel:
         query = {}
         if target_role:
             query['target_role'] = {'$in': [target_role, 'all']}
-        return list(db.announcements.find(query).sort('created_at', -1))
+        try:
+            return list(db.announcements.find(query).sort('created_at', -1))
+        except Exception:
+            return []
 
     @staticmethod
     def get_announcement_by_id(anc_id):
         db = get_db()
+        if db is None:
+            return None
         try:
-            return db.announcements.find_one({'_id': ObjectId(anc_id)})
+            return db.announcements.find_one({'_id': to_oid(anc_id)})
         except Exception:
             return None
 
@@ -236,38 +241,58 @@ class LMSModel:
     @staticmethod
     def get_approved_student_by_id(app_id):
         db = get_db()
+        if db is None:
+            return None
         try:
-            return db.approved_students.find_one({'_id': ObjectId(app_id)})
+            return db.approved_students.find_one({'_id': to_oid(app_id)})
         except Exception:
             return None
 
     @staticmethod
     def create_approved_student(data):
         db = get_db()
+        if db is None:
+            return None
         data['roll_number'] = str(data.get('roll_number', '')).strip().upper()
         data['email'] = str(data.get('email', '')).strip().lower()
         data['created_at'] = datetime.utcnow()
         data['is_registered'] = data.get('is_registered', False)
-        return db.approved_students.insert_one(data).inserted_id
+        try:
+            return db.approved_students.insert_one(data).inserted_id
+        except Exception:
+            return None
 
     @staticmethod
     def update_approved_student(app_id, data):
         db = get_db()
+        if db is None:
+            return None
         if 'roll_number' in data:
             data['roll_number'] = str(data['roll_number']).strip().upper()
         if 'email' in data:
             data['email'] = str(data['email']).strip().lower()
         data['updated_at'] = datetime.utcnow()
-        return db.approved_students.update_one({'_id': ObjectId(app_id)}, {'$set': data})
+        try:
+            return db.approved_students.update_one({'_id': to_oid(app_id)}, {'$set': data})
+        except Exception:
+            return None
 
     @staticmethod
     def delete_approved_student(app_id):
         db = get_db()
+        if db is None:
+            return None
         student = LMSModel.get_approved_student_by_id(app_id)
         if student:
             # Delete corresponding user account if exists
-            db.users.delete_one({'role_number': student.get('roll_number')})
-        return db.approved_students.delete_one({'_id': ObjectId(app_id)})
+            try:
+                db.users.delete_one({'role_number': student.get('roll_number')})
+            except Exception:
+                pass
+        try:
+            return db.approved_students.delete_one({'_id': to_oid(app_id)})
+        except Exception:
+            return None
 
     @staticmethod
     def bulk_import_approved_students(students_list):

@@ -1,11 +1,13 @@
 from datetime import datetime
 from bson.objectid import ObjectId
-from app.extensions import get_db
+from app.extensions import get_db, to_oid
 
 class NotificationModel:
     @staticmethod
     def create_notification(title, message, target_type='all', target_users=None, created_by='System'):
         db = get_db()
+        if db is None:
+            return None
         now = datetime.utcnow()
         doc = {
             'title': title,
@@ -16,7 +18,10 @@ class NotificationModel:
             'created_by': created_by,
             'created_at': now
         }
-        return db.notifications.insert_one(doc).inserted_id
+        try:
+            return db.notifications.insert_one(doc).inserted_id
+        except Exception:
+            return None
 
     @staticmethod
     def get_user_notifications(user):
@@ -48,21 +53,31 @@ class NotificationModel:
     @staticmethod
     def mark_as_read(notification_id, user_id):
         db = get_db()
-        return db.notifications.update_one(
-            {'_id': ObjectId(notification_id)},
-            {'$addToSet': {'read_by': str(user_id)}}
-        )
+        if db is None:
+            return None
+        try:
+            return db.notifications.update_one(
+                {'_id': to_oid(notification_id)},
+                {'$addToSet': {'read_by': str(user_id)}}
+            )
+        except Exception:
+            return None
 
     @staticmethod
     def mark_all_as_read(user):
         db = get_db()
+        if db is None:
+            return True
         notifications = NotificationModel.get_user_notifications(user)
         user_id = str(user.id)
         for n in notifications:
-            db.notifications.update_one(
-                {'_id': n['_id']},
-                {'$addToSet': {'read_by': user_id}}
-            )
+            try:
+                db.notifications.update_one(
+                    {'_id': to_oid(n['_id'])},
+                    {'$addToSet': {'read_by': user_id}}
+                )
+            except Exception:
+                pass
         return True
 
     @staticmethod

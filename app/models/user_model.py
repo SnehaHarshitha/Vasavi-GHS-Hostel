@@ -1,7 +1,7 @@
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 from bson.objectid import ObjectId
-from app.extensions import get_db
+from app.extensions import get_db, to_oid
 
 class UserModel:
     @staticmethod
@@ -137,7 +137,7 @@ class UserModel:
         if db is None:
             return None
         try:
-            return db.users.find_one({'_id': ObjectId(user_id)})
+            return db.users.find_one({'_id': to_oid(user_id)})
         except Exception:
             return None
 
@@ -155,7 +155,10 @@ class UserModel:
         update_data['updated_at'] = datetime.utcnow()
         if 'password' in update_data:
             update_data['password_hash'] = generate_password_hash(update_data.pop('password'))
-        return db.users.update_one({'_id': ObjectId(user_id)}, {'$set': update_data})
+        try:
+            return db.users.update_one({'_id': to_oid(user_id)}, {'$set': update_data})
+        except Exception:
+            return None
 
     @staticmethod
     def get_all_by_role(role=None, status=None):
@@ -190,4 +193,7 @@ class UserModel:
         db = get_db()
         if db is None:
             return None
-        return db.users.delete_one({'_id': ObjectId(user_id)})
+        try:
+            return db.users.delete_one({'_id': to_oid(user_id)})
+        except Exception:
+            return None

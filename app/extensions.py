@@ -10,6 +10,16 @@ login_manager.login_message_category = 'warning'
 mongo_client = None
 db = None
 
+def to_oid(val):
+    if not val:
+        return None
+    if isinstance(val, ObjectId):
+        return val
+    try:
+        return ObjectId(val)
+    except Exception:
+        return str(val)
+
 class User(UserMixin):
     def __init__(self, user_data):
         self.id = str(user_data.get('_id'))
@@ -98,7 +108,7 @@ def load_user(user_id):
     database = get_db()
     if database is not None:
         try:
-            user_data = database.users.find_one({"_id": ObjectId(user_id)})
+            user_data = database.users.find_one({"_id": to_oid(user_id)})
             if user_data:
                 return User(user_data)
         except Exception:
