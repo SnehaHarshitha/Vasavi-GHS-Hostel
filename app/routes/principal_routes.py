@@ -25,28 +25,66 @@ def dashboard():
 
     today_str = datetime.now().strftime('%Y-%m-%d')
     
-    # Core stats
-    total_students = UserModel.count_students()
-    approved_students = UserModel.count_students(status='approved')
-    pending_registrations = UserModel.count_students(status='pending')
-    
-    room_stats = RoomModel.get_stats()
-    food_stats = MessModel.get_daily_selection_counts(today_str)
-    cleaning_stats = CleaningModel.get_daily_cleaning_stats(today_str)
-    complaint_stats = ComplaintModel.get_stats()
-    sick_leave_stats = SickLeaveModel.get_stats()
-    
-    # Resolution Rate calculation
-    resolved_count = complaint_stats.get('resolved', 0)
-    total_complaints = complaint_stats.get('total', 0)
+    try:
+        total_students = UserModel.count_students()
+        approved_students = UserModel.count_students(status='approved')
+        pending_registrations = UserModel.count_students(status='pending')
+    except Exception:
+        total_students, approved_students, pending_registrations = 0, 0, 0
+
+    try:
+        room_stats = RoomModel.get_stats() or {}
+    except Exception:
+        room_stats = {'total_rooms': 0, 'occupied_rooms': 0, 'available_rooms': 0}
+
+    try:
+        food_stats = MessModel.get_daily_selection_counts(today_str) or {}
+    except Exception:
+        food_stats = {'date': today_str, 'egg_count': 0, 'veg_count': 0, 'total_selected': 0, 'total_students': 0, 'pending_count': 0}
+
+    try:
+        cleaning_stats = CleaningModel.get_daily_cleaning_stats(today_str) or {}
+    except Exception:
+        cleaning_stats = {'date': today_str, 'completed': 0, 'pending': 0, 'total_rooms': 0}
+
+    try:
+        complaint_stats = ComplaintModel.get_stats() or {}
+    except Exception:
+        complaint_stats = {'total': 0, 'submitted': 0, 'pending': 0, 'in_progress': 0, 'rectified': 0, 'resolved': 0, 'rejected': 0}
+
+    try:
+        sick_leave_stats = SickLeaveModel.get_stats() or {}
+    except Exception:
+        sick_leave_stats = {'total': 0, 'pending': 0, 'submitted': 0, 'approved': 0, 'rejected': 0, 'sick_total': 0, 'currently_on_sick': 0}
+
+    resolved_count = complaint_stats.get('resolved', 0) if isinstance(complaint_stats, dict) else 0
+    total_complaints = complaint_stats.get('total', 0) if isinstance(complaint_stats, dict) else 0
     resolution_rate = round((resolved_count / total_complaints * 100), 1) if total_complaints > 0 else 100.0
 
-    recent_complaints = ComplaintModel.get_all_complaints()[:8]
-    sunday_tasks = CleaningModel.get_all_sunday_tasks()[:5]
-    recent_sick_leaves = SickLeaveModel.get_all_requests()[:5]
+    try:
+        recent_complaints = ComplaintModel.get_all_complaints()[:8]
+    except Exception:
+        recent_complaints = []
 
-    all_rooms = RoomModel.get_all_rooms()
-    cleaning_records = {r.get('room_number'): r for r in CleaningModel.get_cleaning_by_date(today_str)}
+    try:
+        sunday_tasks = CleaningModel.get_all_sunday_tasks()[:5]
+    except Exception:
+        sunday_tasks = []
+
+    try:
+        recent_sick_leaves = SickLeaveModel.get_all_requests()[:5]
+    except Exception:
+        recent_sick_leaves = []
+
+    try:
+        all_rooms = RoomModel.get_all_rooms()
+    except Exception:
+        all_rooms = []
+
+    try:
+        cleaning_records = {r.get('room_number'): r for r in CleaningModel.get_cleaning_by_date(today_str)}
+    except Exception:
+        cleaning_records = {}
 
     return render_template(
         'principal/dashboard.html',

@@ -27,48 +27,65 @@ def dashboard():
     today_str = datetime.now().strftime('%Y-%m-%d')
     day_name = datetime.now().strftime('%A')
 
-    # Get mess info for today
-    timetable, notes, _, _ = MessModel.get_weekly_timetable()
-    today_menu = timetable.get(day_name, {})
+    try:
+        timetable, notes, _, _ = MessModel.get_weekly_timetable()
+        today_menu = timetable.get(day_name, {})
+    except Exception:
+        today_menu = {}
 
-    # Sync official name & room from Admin Approved Student List
-    approved_info = LMSModel.find_approved_student(current_user.role_number, current_user.email)
-    if approved_info and approved_info.get('full_name'):
-        app_name = approved_info.get('full_name')
-        app_room = approved_info.get('room_number')
-        app_dept = approved_info.get('department')
-        updates = {}
-        if current_user.full_name != app_name:
-            updates['full_name'] = app_name
-            current_user.full_name = app_name
-        if app_room and current_user.room_number != app_room:
-            updates['room_number'] = app_room
-            current_user.room_number = app_room
-        if app_dept and current_user.department != app_dept:
-            updates['department'] = app_dept
-            current_user.department = app_dept
-        if updates:
-            UserModel.update_user(current_user.id, updates)
+    try:
+        approved_info = LMSModel.find_approved_student(current_user.role_number, current_user.email)
+        if approved_info and approved_info.get('full_name'):
+            app_name = approved_info.get('full_name')
+            app_room = approved_info.get('room_number')
+            app_dept = approved_info.get('department')
+            updates = {}
+            if current_user.full_name != app_name:
+                updates['full_name'] = app_name
+                current_user.full_name = app_name
+            if app_room and current_user.room_number != app_room:
+                updates['room_number'] = app_room
+                current_user.room_number = app_room
+            if app_dept and current_user.department != app_dept:
+                updates['department'] = app_dept
+                current_user.department = app_dept
+            if updates:
+                UserModel.update_user(current_user.id, updates)
+    except Exception:
+        pass
 
-    # Food choice selection status
-    food_choice = MessModel.get_student_selection(current_user.id, today_str)
+    try:
+        food_choice = MessModel.get_student_selection(current_user.id, today_str)
+    except Exception:
+        food_choice = None
 
-    # Cleaning status
-    cleaning_record = CleaningModel.get_room_cleaning(current_user.room_number, today_str)
+    try:
+        cleaning_record = CleaningModel.get_room_cleaning(current_user.room_number, today_str)
+    except Exception:
+        cleaning_record = None
 
-    # Latest Sunday task
-    sunday_task = CleaningModel.get_latest_sunday_task()
+    try:
+        sunday_task = CleaningModel.get_latest_sunday_task()
+    except Exception:
+        sunday_task = None
 
-    # Complaints
-    complaints = ComplaintModel.get_student_complaints(current_user.id)
-    pending_complaints = [c for c in complaints if c.get('status') in ['Submitted', 'Seen', 'In Progress']]
+    try:
+        complaints = ComplaintModel.get_student_complaints(current_user.id)
+        pending_complaints = [c for c in complaints if c.get('status') in ['Submitted', 'Seen', 'In Progress']]
+    except Exception:
+        pending_complaints = []
 
-    # Sick Leaves
-    active_sick_leave = SickLeaveModel.get_active_student_request(current_user.id, today_str)
+    try:
+        active_sick_leave = SickLeaveModel.get_active_student_request(current_user.id, today_str)
+    except Exception:
+        active_sick_leave = None
 
-    # Notifications
-    notifications = NotificationModel.get_user_notifications(current_user)
-    unread_notifications = [n for n in notifications if not n.get('is_read')]
+    try:
+        notifications = NotificationModel.get_user_notifications(current_user)
+        unread_notifications = [n for n in notifications if not n.get('is_read')]
+    except Exception:
+        notifications = []
+        unread_notifications = []
 
     return render_template(
         'student/dashboard.html',

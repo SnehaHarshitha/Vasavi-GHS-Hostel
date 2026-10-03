@@ -223,136 +223,160 @@ class StaffModel:
     @staticmethod
     def update_attendance_by_id(att_id, update_data, user_name='System Admin'):
         db = get_db()
+        if db is None:
+            return None
         update_data['updated_by'] = user_name
         update_data['updated_at'] = datetime.utcnow()
-        return db.staff_attendance.update_one({'_id': ObjectId(att_id)}, {'$set': update_data})
+        try:
+            return db.staff_attendance.update_one({'_id': to_oid(att_id)}, {'$set': update_data})
+        except Exception:
+            return None
 
     @staticmethod
     def get_dashboard_counters(date_str):
         db = get_db()
-        caretakers = list(db.caretakers.find({'status': 'Active'}))
-        working_staff = list(db.working_staff.find({'status': 'Active'}))
+        if db is None:
+            return {
+                'total_caretakers': 0, 'caretakers_present': 0, 'caretakers_absent': 0, 'caretakers_leave': 0,
+                'total_working_staff': 0, 'working_staff_present': 0, 'working_staff_absent': 0, 'working_staff_leave': 0,
+                'total_staff': 0, 'total_present': 0, 'total_absent': 0, 'total_leave': 0, 'not_marked': 0
+            }
+        try:
+            caretakers = list(db.caretakers.find({'status': 'Active'}))
+            working_staff = list(db.working_staff.find({'status': 'Active'}))
 
-        caretakers_map = {c['staff_id']: c for c in caretakers}
-        working_staff_map = {w['staff_id']: w for w in working_staff}
+            caretakers_map = {c['staff_id']: c for c in caretakers}
+            working_staff_map = {w['staff_id']: w for w in working_staff}
 
-        daily_records = list(db.staff_attendance.find({'attendance_date': date_str}))
-        daily_map = {r['staff_id']: r for r in daily_records}
+            daily_records = list(db.staff_attendance.find({'attendance_date': date_str}))
+            daily_map = {r['staff_id']: r for r in daily_records}
 
-        ct_present = 0
-        ct_absent = 0
-        ct_leave = 0
+            ct_present = 0
+            ct_absent = 0
+            ct_leave = 0
 
-        for c_id in caretakers_map:
-            rec = daily_map.get(c_id)
-            if rec:
-                st = rec.get('attendance_status')
-                if st == 'Present': ct_present += 1
-                elif st == 'Absent': ct_absent += 1
-                elif st == 'On Leave': ct_leave += 1
+            for c_id in caretakers_map:
+                rec = daily_map.get(c_id)
+                if rec:
+                    st = rec.get('attendance_status')
+                    if st == 'Present': ct_present += 1
+                    elif st == 'Absent': ct_absent += 1
+                    elif st == 'On Leave': ct_leave += 1
 
-        ws_present = 0
-        ws_absent = 0
-        ws_leave = 0
+            ws_present = 0
+            ws_absent = 0
+            ws_leave = 0
 
-        for w_id in working_staff_map:
-            rec = daily_map.get(w_id)
-            if rec:
-                st = rec.get('attendance_status')
-                if st == 'Present': ws_present += 1
-                elif st == 'Absent': ws_absent += 1
-                elif st == 'On Leave': ws_leave += 1
+            for w_id in working_staff_map:
+                rec = daily_map.get(w_id)
+                if rec:
+                    st = rec.get('attendance_status')
+                    if st == 'Present': ws_present += 1
+                    elif st == 'Absent': ws_absent += 1
+                    elif st == 'On Leave': ws_leave += 1
 
-        total_staff = len(caretakers) + len(working_staff)
-        total_present = ct_present + ws_present
-        total_absent = ct_absent + ws_absent
-        total_leave = ct_leave + ws_leave
-        not_marked = total_staff - (total_present + total_absent + total_leave)
+            total_staff = len(caretakers) + len(working_staff)
+            total_present = ct_present + ws_present
+            total_absent = ct_absent + ws_absent
+            total_leave = ct_leave + ws_leave
+            not_marked = total_staff - (total_present + total_absent + total_leave)
 
-        return {
-            'total_caretakers': len(caretakers),
-            'caretakers_present': ct_present,
-            'caretakers_absent': ct_absent,
-            'caretakers_leave': ct_leave,
-            'total_working_staff': len(working_staff),
-            'working_staff_present': ws_present,
-            'working_staff_absent': ws_absent,
-            'working_staff_leave': ws_leave,
-            'total_staff': total_staff,
-            'total_present': total_present,
-            'total_absent': total_absent,
-            'total_leave': total_leave,
-            'not_marked': not_marked if not_marked >= 0 else 0
-        }
+            return {
+                'total_caretakers': len(caretakers),
+                'caretakers_present': ct_present,
+                'caretakers_absent': ct_absent,
+                'caretakers_leave': ct_leave,
+                'total_working_staff': len(working_staff),
+                'working_staff_present': ws_present,
+                'working_staff_absent': ws_absent,
+                'working_staff_leave': ws_leave,
+                'total_staff': total_staff,
+                'total_present': total_present,
+                'total_absent': total_absent,
+                'total_leave': total_leave,
+                'not_marked': not_marked if not_marked >= 0 else 0
+            }
+        except Exception:
+            return {
+                'total_caretakers': 0, 'caretakers_present': 0, 'caretakers_absent': 0, 'caretakers_leave': 0,
+                'total_working_staff': 0, 'working_staff_present': 0, 'working_staff_absent': 0, 'working_staff_leave': 0,
+                'total_staff': 0, 'total_present': 0, 'total_absent': 0, 'total_leave': 0, 'not_marked': 0
+            }
 
     @staticmethod
     def get_categorized_staff_names(date_str):
         db = get_db()
-        caretakers = list(db.caretakers.find({'status': 'Active'}))
-        working_staff = list(db.working_staff.find({'status': 'Active'}))
+        if db is None:
+            return {'present': [], 'absent': [], 'on_leave': [], 'not_marked': []}
+        try:
+            caretakers = list(db.caretakers.find({'status': 'Active'}))
+            working_staff = list(db.working_staff.find({'status': 'Active'}))
 
-        all_active_staff = []
-        for c in caretakers:
-            all_active_staff.append({
-                'staff_id': c['staff_id'],
-                'full_name': c['full_name'],
-                'category': 'Caretaker',
-                'job_role': c.get('assigned_work', 'Hostel Maintenance'),
-                'shift': c.get('shift', 'Morning'),
-                'phone': c.get('phone', '')
-            })
+            all_active_staff = []
+            for c in caretakers:
+                all_active_staff.append({
+                    'staff_id': c['staff_id'],
+                    'full_name': c['full_name'],
+                    'category': 'Caretaker',
+                    'job_role': c.get('assigned_work', 'Hostel Maintenance'),
+                    'shift': c.get('shift', 'Morning'),
+                    'phone': c.get('phone', '')
+                })
 
-        for w in working_staff:
-            all_active_staff.append({
-                'staff_id': w['staff_id'],
-                'full_name': w['full_name'],
-                'category': 'Working Staff',
-                'job_role': w.get('job_role', 'Staff'),
-                'shift': w.get('shift', 'Morning'),
-                'phone': w.get('phone', '')
-            })
+            for w in working_staff:
+                all_active_staff.append({
+                    'staff_id': w['staff_id'],
+                    'full_name': w['full_name'],
+                    'category': 'Working Staff',
+                    'job_role': w.get('job_role', 'Staff'),
+                    'shift': w.get('shift', 'Morning'),
+                    'phone': w.get('phone', '')
+                })
 
-        daily_records = list(db.staff_attendance.find({'attendance_date': date_str}))
-        daily_map = {r['staff_id']: r for r in daily_records}
+            daily_records = list(db.staff_attendance.find({'attendance_date': date_str}))
+            daily_map = {r['staff_id']: r for r in daily_records}
 
-        present_list = []
-        absent_list = []
-        on_leave_list = []
-        not_marked_list = []
+            present_list = []
+            absent_list = []
+            on_leave_list = []
+            not_marked_list = []
 
-        for staff in all_active_staff:
-            s_id = staff['staff_id']
-            rec = daily_map.get(s_id)
-            staff_info = {
-                'staff_id': s_id,
-                'full_name': staff['full_name'],
-                'category': staff['category'],
-                'job_role': staff['job_role'],
-                'shift': staff['shift'],
-                'phone': staff['phone'],
-                'check_in': rec.get('check_in', '08:00 AM') if rec else '',
-                'check_out': rec.get('check_out', '05:00 PM') if rec else '',
-                'remarks': rec.get('remarks', '') if rec else '',
-                'attendance_date': date_str,
-                'att_id': str(rec['_id']) if rec else None
-            }
+            for staff in all_active_staff:
+                s_id = staff['staff_id']
+                rec = daily_map.get(s_id)
+                staff_info = {
+                    'staff_id': s_id,
+                    'full_name': staff['full_name'],
+                    'category': staff['category'],
+                    'job_role': staff['job_role'],
+                    'shift': staff['shift'],
+                    'phone': staff['phone'],
+                    'check_in': rec.get('check_in', '08:00 AM') if rec else '',
+                    'check_out': rec.get('check_out', '05:00 PM') if rec else '',
+                    'remarks': rec.get('remarks', '') if rec else '',
+                    'attendance_date': date_str,
+                    'att_id': str(rec['_id']) if rec else None
+                }
 
-            if not rec:
-                not_marked_list.append(staff_info)
-            else:
-                st = rec.get('attendance_status')
-                if st == 'Present':
-                    present_list.append(staff_info)
-                elif st == 'Absent':
-                    absent_list.append(staff_info)
-                elif st == 'On Leave':
-                    on_leave_list.append(staff_info)
-                else:
+                if not rec:
                     not_marked_list.append(staff_info)
+                else:
+                    st = rec.get('attendance_status')
+                    if st == 'Present':
+                        present_list.append(staff_info)
+                    elif st == 'Absent':
+                        absent_list.append(staff_info)
+                    elif st == 'On Leave':
+                        on_leave_list.append(staff_info)
+                    else:
+                        not_marked_list.append(staff_info)
 
-        return {
-            'present': present_list,
-            'absent': absent_list,
-            'on_leave': on_leave_list,
-            'not_marked': not_marked_list
-        }
+            return {
+                'present': present_list,
+                'absent': absent_list,
+                'on_leave': on_leave_list,
+                'not_marked': not_marked_list
+            }
+        except Exception:
+            return {'present': [], 'absent': [], 'on_leave': [], 'not_marked': []}
+

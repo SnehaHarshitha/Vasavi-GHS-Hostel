@@ -177,6 +177,8 @@ class ComplaintModel:
     @staticmethod
     def update_status(complaint_id, status, staff_reply=""):
         db = get_db()
+        if db is None:
+            return None
         now = datetime.utcnow()
         update_doc = {
             'status': status,
@@ -185,14 +187,19 @@ class ComplaintModel:
         if staff_reply:
             update_doc['staff_reply'] = staff_reply
 
-        return db.complaints.update_one(
-            {'_id': ObjectId(complaint_id)},
-            {'$set': update_doc}
-        )
+        try:
+            return db.complaints.update_one(
+                {'_id': to_oid(complaint_id)},
+                {'$set': update_doc}
+            )
+        except Exception:
+            return None
 
     @staticmethod
     def add_comment(complaint_id, author_role, author_name, comment_text):
         db = get_db()
+        if db is None:
+            return None
         now = datetime.utcnow()
         comment = {
             'author_role': author_role,
@@ -200,34 +207,27 @@ class ComplaintModel:
             'comment_text': comment_text,
             'created_at': now
         }
-        return db.complaints.update_one(
-            {'_id': ObjectId(complaint_id)},
-            {
-                '$push': {'feedback_comments': comment},
-                '$set': {'updated_at': now}
-            }
-        )
+        try:
+            return db.complaints.update_one(
+                {'_id': to_oid(complaint_id)},
+                {
+                    '$push': {'feedback_comments': comment},
+                    '$set': {'updated_at': now}
+                }
+            )
+        except Exception:
+            return None
 
     @staticmethod
     def rate_complaint(complaint_id, rating):
         db = get_db()
-        return db.complaints.update_one(
-            {'_id': ObjectId(complaint_id)},
-            {'$set': {'rating': int(rating), 'updated_at': datetime.utcnow()}}
-        )
+        if db is None:
+            return None
+        try:
+            return db.complaints.update_one(
+                {'_id': to_oid(complaint_id)},
+                {'$set': {'rating': int(rating), 'updated_at': datetime.utcnow()}}
+            )
+        except Exception:
+            return None
 
-    @staticmethod
-    def get_stats():
-        db = get_db()
-        total = db.complaints.count_documents({})
-        submitted = db.complaints.count_documents({'status': 'Submitted'})
-        in_progress = db.complaints.count_documents({'status': 'In Progress'})
-        resolved = db.complaints.count_documents({'status': 'Resolved'})
-        rejected = db.complaints.count_documents({'status': 'Rejected'})
-        return {
-            'total': total,
-            'submitted': submitted,
-            'in_progress': in_progress,
-            'resolved': resolved,
-            'rejected': rejected
-        }

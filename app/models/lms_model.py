@@ -33,20 +33,36 @@ class LMSModel:
     @staticmethod
     def create_announcement(data):
         db = get_db()
+        if db is None:
+            return None
         data['created_at'] = datetime.utcnow()
         data['updated_at'] = datetime.utcnow()
-        return db.announcements.insert_one(data).inserted_id
+        try:
+            return db.announcements.insert_one(data).inserted_id
+        except Exception:
+            return None
 
     @staticmethod
     def update_announcement(anc_id, data):
         db = get_db()
+        if db is None:
+            return None
         data['updated_at'] = datetime.utcnow()
-        return db.announcements.update_one({'_id': ObjectId(anc_id)}, {'$set': data})
+        try:
+            return db.announcements.update_one({'_id': to_oid(anc_id)}, {'$set': data})
+        except Exception:
+            return None
 
     @staticmethod
     def delete_announcement(anc_id):
         db = get_db()
-        return db.announcements.delete_one({'_id': ObjectId(anc_id)})
+        if db is None:
+            return None
+        try:
+            return db.announcements.delete_one({'_id': to_oid(anc_id)})
+        except Exception:
+            return None
+
 
     # ----------------------------------------------------
     # APPROVED STUDENT LIST & ACCESS CONTROL
