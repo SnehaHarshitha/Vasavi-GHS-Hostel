@@ -74,6 +74,15 @@ def init_mongo(app):
             db.users.create_index([("email", ASCENDING)], unique=True, sparse=True)
             db.rooms.create_index([("room_number", ASCENDING)], unique=True)
             db.food_selections.create_index([("student_id", ASCENDING), ("date", ASCENDING)], unique=True)
+            
+            # Auto-seed database if empty on Render / cloud MongoDB Atlas
+            if db.users.count_documents({}) == 0:
+                try:
+                    from scripts.seed_sample_data import seed_sample_data
+                    seed_sample_data()
+                    app.logger.info("Successfully auto-seeded MongoDB Atlas database!")
+                except Exception as seed_err:
+                    app.logger.warning(f"Auto-seeding note: {seed_err}")
         except Exception as idx_err:
             app.logger.warning(f"Error setting up MongoDB indexes: {idx_err}")
 

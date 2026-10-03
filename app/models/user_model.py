@@ -43,8 +43,8 @@ class UserModel:
                 query.append({'email': user_data['email']})
             if user_data.get('role_number'):
                 query.append({'role_number': user_data['role_number']})
-            if user_data.get('role'):
-                query.append({'role': user_data['role']})
+            if user_data.get('username'):
+                query.append({'username': user_data['username']})
             if query:
                 existing = db.users.find_one({'$or': query})
                 if existing:
